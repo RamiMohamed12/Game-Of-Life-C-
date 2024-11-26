@@ -54,6 +54,30 @@ void Grid::loadFromFile(const string &filename) {
 }
 
 
+void Grid::saveToFile(const string &outputFolder, int iteration) const {
+
+	stringstream filename; 
+	filename <<outputFolder << "/generation_" << iteration << ".txt";
+
+	ofstream outFile(filename.str()); 
+	
+		if (!outFile) {
+	
+			throw runtime_error ("Cannot open file for saving grid state");
+
+		}
+	
+		for( int y =0; y < height; y++) {
+		
+			for (int x=0; x< width; x++) {
+			
+				outFile<<(cells[y][x]->Alive() ? '1' : '0') << " ";  
+			
+			}
+
+		}
+}
+				
 void Grid::update() {
     vector<vector<shared_ptr<Cell>>> newCells = cells;
     
