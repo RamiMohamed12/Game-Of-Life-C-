@@ -45,8 +45,9 @@ void Grid::loadFromFile(const string &filename) {
         for (int x = 0; x < width && !ss.eof(); ++x) {
             int state;
             ss >> state;
-            cells[y][x] = state ? make_shared<AliveCell>() : make_shared<DeadCell>();
-        }
+       	    cells[y][x] = state ? static_pointer_cast<Cell>(make_shared<AliveCell>()) : static_pointer_cast<Cell>(make_shared<DeadCell>());
+
+       	}
         ++y;
     }
 

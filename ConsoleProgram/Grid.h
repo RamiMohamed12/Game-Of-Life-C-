@@ -23,7 +23,7 @@ class Grid {
 	void display() const; 
 	void loadFromFile(const string& filename);
 	void saveToFile(const string& outputFolder, int iteration) const;
-	void hasChanged() const;
+	bool hasChanged() const;
 };
 
 
