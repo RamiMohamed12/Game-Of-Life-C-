@@ -21,8 +21,9 @@ class Grid {
 	void randomize();
 	void update (); 
 	void display() const; 
-	void loadFromFile(const std::string& filename);
-	void saveToFile(const std::string& outputFolder, int iteration) const;
+	void loadFromFile(const string& filename);
+	void saveToFile(const string& outputFolder, int iteration) const;
+	void hasChanged() const;
 };
 
 
