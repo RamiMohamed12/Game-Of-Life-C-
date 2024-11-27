@@ -3,19 +3,9 @@
 #include <unistd.h>
 #include <memory>
 #include "Grid.h"
+#include "FileHandler.h"
 
-// Function to check if a directory exists
-bool directoryExists(const std::string& dir) {
-    struct stat info;
-    return stat(dir.c_str(), &info) == 0 && (info.st_mode & S_IFDIR);
-}
 
-// Function to create the directory
-void createDirectory(const std::string& dir) {
-    if (mkdir(dir.c_str(), 0777) != 0) {
-        std::cerr << "Error creating directory: " << dir << '\n';
-    }
-}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -27,9 +17,10 @@ int main(int argc, char* argv[]) {
     std::string outputFolder = inputFile + "_out";
     
     // Check if output folder exists, and create it if necessary
-    if (!directoryExists(outputFolder)) {
-        createDirectory(outputFolder);
+    if (!FileHandler::directoryExists(outputFolder)) {
+    FileHandler::createDirectory(outputFolder); 
     }
+
 
     int width, height;
     std::cout << "Enter grid width: ";
