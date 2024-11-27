@@ -2,7 +2,7 @@
 TARGET = GameOfLife
 
 # Fichiers source
-SRC = Game.cpp Grid.cpp AliveCell.cpp DeadCell.cpp
+SRC = Game.cpp Grid.cpp AliveCell.cpp DeadCell.cpp FileHandler.cpp
 
 # Fichiers objets générés
 OBJ = $(SRC:.cpp=.o)
