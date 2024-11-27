@@ -56,7 +56,7 @@ void FileHandler::loadGridFromFile(const string &filename, vector<vector<shared_
 
 }
 
-void FileHandler::saveToFile(const string &outputFolder, int iteration, const vector<vector<shared_ptr<Cell>>> &cells){
+void FileHandler::saveToFile(const string &outputFolder, int iteration, const vector<vector<shared_ptr<Cell>>> &cells,int width,int height){
 
 	stringstream filename; 
 	filename <<outputFolder << "/generation_" << iteration << ".txt";
