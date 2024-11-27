@@ -3,7 +3,11 @@
 #include<sstream>
 #include<fstream> 
 #include<cstdlib> 
-#include"Cell.h" 
+#include"Cell.h"
+#include"DeadCell.h"
+#include"AliveCell.h"
+#include"FileHandler.h" 
+
 Grid::Grid(int w, int h) : width(w), height(h), cells(h, std::vector<std::shared_ptr<Cell>>(w)) {}
 
 int Grid::countLiveNeighbors(int x, int y) const {
@@ -30,54 +34,15 @@ int Grid::countLiveNeighbors(int x, int y) const {
 		return count; 
 }
 
+
 void Grid::loadFromFile(const string &filename) {
-
-	 ifstream inputFile(filename);
-    if (!inputFile) {
-        throw runtime_error("Can't open input file!");
-    }
-
-    string line;
-    int y = 0;
-
-    while (getline(inputFile, line) && y < height) {
-        stringstream ss(line);
-        for (int x = 0; x < width && !ss.eof(); ++x) {
-            int state;
-            ss >> state;
-       	    cells[y][x] = state ? static_pointer_cast<Cell>(make_shared<AliveCell>()) : static_pointer_cast<Cell>(make_shared<DeadCell>());
-
-       	}
-        ++y;
-    }
-
+    FileHandler::loadGridFromFile(filename, cells, width, height);
 }
-
 
 void Grid::saveToFile(const string &outputFolder, int iteration) const {
-
-	stringstream filename; 
-	filename <<outputFolder << "/generation_" << iteration << ".txt";
-
-	ofstream outFile(filename.str()); 
-	
-		if (!outFile) {
-	
-			throw runtime_error ("Cannot open file for saving grid state");
-
-		}
-	
-		for( int y =0; y < height; y++) {
-		
-			for (int x=0; x< width; x++) {
-			
-				outFile<<(cells[y][x]->Alive() ? '1' : '0') << " ";  
-			
-			}
-
-		}
+    FileHandler::saveToFile(outputFolder, iteration, cells);
 }
-				
+
 void Grid::update() {
     vector<vector<shared_ptr<Cell>>> newCells = cells;
     
