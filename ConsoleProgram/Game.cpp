@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
         
         // Save the grid's current state to a file
         try {
-            grid.saveToFile(outputFolder, generation);
+            grid.saveToFile(outputFolder, generation,width,height);
         } catch (const std::exception& e) {
             std::cerr << "Cannot open file for saving grid state: " << e.what() << '\n';
         }
