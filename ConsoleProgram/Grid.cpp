@@ -39,8 +39,8 @@ void Grid::loadFromFile(const string &filename) {
     FileHandler::loadGridFromFile(filename, cells, width, height);
 }
 
-void Grid::saveToFile(const string &outputFolder, int iteration) const {
-    FileHandler::saveToFile(outputFolder, iteration, cells);
+void Grid::saveToFile(const string &outputFolder, int iteration,int width,int height) const {
+    FileHandler::saveToFile(outputFolder, iteration, cells,width,height);
 }
 
 void Grid::update() {
