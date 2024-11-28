@@ -17,37 +17,36 @@ Le jeu se déroule en une série de générations (ou itérations). Chaque gén�
 
 Clonez le dépôt Git en utilisant la commande suivante dans votre terminal. Cela téléchargera tout le code source dans un répertoire local : 
 
-        git clone https://github.com/RamiMohamed12/Game-Of-Life-C-.git
+    git clone https://github.com/RamiMohamed12/Game-Of-Life-C-.git
 
 Ensuite, accédez au répertoire du projet cloné :
 
-        cd Game-Of-Life-C-
+    cd Game-Of-Life-C-
 
 **Pour la Version Console:** 
 
-        cd ConsoleProgram
+    cd ConsoleProgram
 
 Avant de lancer le programme, vous devez vous assurer que le fichier input_file contient l'état initial de la grille dans un format spécifique. 
 
 Ouvrez le fichier input_file et modifiez son contenu pour qu'il ressemble à ceci (c'est un exemple pour une grille 7x5) :
 
-          0 0 1 0 1
-          0 1 1 1 1
-          0 0 1 0 1
-          0 0 1 0 1
-          0 1 1 1 1
-          0 0 1 0 1
+    0 0 1 0 1
+    0 1 1 1 1
+    0 0 1 0 1
+    0 0 1 0 1
+    0 1 1 1 1
+    0 0 1 0 1
 
 Compiler le programme avec make
 
-        make 
+    make 
 
 Cela va compiler tous les fichiers sources et générer un exécutable dans le répertoire actuel.
 
-
 Exécutez le programme après la compilation :
 
-      ./GameOfLife input_file
+    ./GameOfLife input_file
 
 Interaction avec le programme
 
