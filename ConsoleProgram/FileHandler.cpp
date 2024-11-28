@@ -10,6 +10,13 @@
 
 using namespace std; 
 
+#ifdef _WIN32
+#include<direct.h> 
+#else 
+#include<unistd.h>
+#endif
+
+
 bool FileHandler::directoryExists(const string &dir) {
 
 	struct stat info;
@@ -20,12 +27,20 @@ bool FileHandler::directoryExists(const string &dir) {
 
 void FileHandler::createDirectory(const string& dir) {
 
-	if(mkdir(dir.c_str(),0777) != 0){
+	#ifdef _WIN32 
 	
-	cerr << " Error creating directory: " << dir << '\n';
+	if(mkdir(dir.c_str()) != 0) {
 	
-	}
+	#else
+	
+	if( mkdir(dir.c_str(),0777) !=0) {
+					
+			
+	#endif	
 
+		cerr <<"Error creating directory"<<dir << '\n'; 	
+
+	       }
 }
 
 void FileHandler::loadGridFromFile(const string &filename, vector<vector<shared_ptr<Cell>>> &cells, int width,int height) {
