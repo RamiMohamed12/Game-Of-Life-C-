@@ -9,14 +9,15 @@ OBJ = $(SRC:.cpp=.o)
 
 # Compilateur et options
 CXX = g++
-CXXFLAGS = -Wall -std=c++11
+CXXFLAGS = -Wall -std=c++17
+LDFLAGS = -lstdc++fs  
 
 # Règle par défaut pour construire l'exécutable
 all: $(TARGET)
 
 # Compilation de l'exécutable
 $(TARGET): $(OBJ)
-	$(CXX) $(CXXFLAGS) $(OBJ) -o $(TARGET)
+	$(CXX) $(CXXFLAGS) $(OBJ) -o $(TARGET) $(LDFLAGS)  
 
 # Compilation des fichiers objets
 %.o: %.cpp

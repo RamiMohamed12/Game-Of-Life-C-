@@ -1,4 +1,5 @@
 #include "FileHandler.h"
+#include <exception>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <iostream>
@@ -7,6 +8,8 @@
 #include "AliveCell.h"
 #include "DeadCell.h"
 #include "Cell.h"
+#include<experimental/filesystem> 
+namespace fs = std::experimental::filesystem; 
 
 using namespace std; 
 
@@ -41,6 +44,30 @@ void FileHandler::createDirectory(const string& dir) {
 		cerr <<"Error creating directory"<<dir << '\n'; 	
 
 	       }
+}
+
+void FileHandler::clearDirectory(const string &dir) {
+
+	try {
+		if(!fs::exists(dir)){
+		
+			cerr<<"Directory does not exist: " << dir << '\n';
+			return; 
+
+		}	
+
+		for (const auto &entry : fs::directory_iterator(dir)) {
+		
+		fs::remove(entry);
+		
+		}
+
+		cout <<"Directory cleared : " << dir << '\n';
+	} catch (const std::exception &e) {
+	
+		cerr<<"Error clearing directory " << dir << ": " << e.what() << '\n';
+
+	}	
 }
 
 void FileHandler::loadGridFromFile(const string &filename, vector<vector<shared_ptr<Cell>>> &cells, int width,int height) {

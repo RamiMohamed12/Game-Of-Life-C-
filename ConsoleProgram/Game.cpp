@@ -5,8 +5,6 @@
 #include "Grid.h"
 #include "FileHandler.h"
 
-
-
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <input_file>\n";
@@ -18,9 +16,16 @@ int main(int argc, char* argv[]) {
     
     // Check if output folder exists, and create it if necessary
     if (!FileHandler::directoryExists(outputFolder)) {
-    FileHandler::createDirectory(outputFolder); 
+        FileHandler::createDirectory(outputFolder);
+    } else {
+        // Clear the output folder before starting new simulation runs
+        try {
+            FileHandler::clearDirectory(outputFolder);
+        } catch (const std::exception& e) {
+            std::cerr << "Error clearing directory: " << e.what() << '\n';
+            return 1;
+        }
     }
-
 
     int width, height;
     std::cout << "Enter grid width: ";
@@ -35,7 +40,7 @@ int main(int argc, char* argv[]) {
         // Load grid state from input file
         grid.loadFromFile(inputFile);
     } catch (const std::exception& e) {
-        std::cerr << e.what() << '\n';
+        std::cerr << "Error loading grid from file: " << e.what() << '\n';
         return 1;
     }
 
@@ -48,9 +53,10 @@ int main(int argc, char* argv[]) {
         
         // Save the grid's current state to a file
         try {
-            grid.saveToFile(outputFolder, generation,width,height);
+            grid.saveToFile(outputFolder, generation, width, height);
         } catch (const std::exception& e) {
             std::cerr << "Cannot open file for saving grid state: " << e.what() << '\n';
+            return 1; // Exit if saving the state fails
         }
 
         // Update grid state based on the rules (e.g., Conway's Game of Life)
