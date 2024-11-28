@@ -24,6 +24,7 @@ class Grid {
 	void loadFromFile(const string& filename);
 	void saveToFile(const string& outputFolder, int iteration,int width,int height) const;
 	bool hasChanged() const;
+	int toroidalIndex(int index,int maxSize) const ; 
 };
 
 

@@ -10,6 +10,22 @@
 
 Grid::Grid(int w, int h) : width(w), height(h), cells(h, std::vector<std::shared_ptr<Cell>>(w)) {}
 
+
+int Grid::toroidalIndex(int index,int maxSize) const {
+
+	if(index < 0) {
+	
+	return maxSize - 1; 
+
+	} else if (index >=maxSize) {
+	
+	return 0; 
+	
+	}	
+	
+	return index;
+}
+
 int Grid::countLiveNeighbors(int x, int y) const {
 
 	int count = 0; 
@@ -19,8 +35,8 @@ int Grid::countLiveNeighbors(int x, int y) const {
 		
 		if (dx==0 && dy == 0 ) continue; 
 		
-		int nx = x + dx;
-		int ny = y + dy; 
+		int nx = toroidalIndex(x + dx, width);
+		int ny = toroidalIndex(y + dy, height); 
 		
 			if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
 			
