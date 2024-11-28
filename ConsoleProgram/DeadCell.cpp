@@ -1,6 +1,8 @@
 #include<iostream> 
 #include "Cell.h" 
 #include <memory> 
+#include"DeadCell.h"
+#include"AliveCell.h"
 using namespace std; 
 
 

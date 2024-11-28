@@ -14,19 +14,7 @@ class Cell {
 
 };
 
-class DeadCell : public Cell {
 	
-	public:
-    		bool Alive() const override;
-    		shared_ptr<Cell> nextState(int liveNeighbors) const override;
-};
-
-class AliveCell : public Cell {
-	
-	public:
-    		bool Alive() const override;
-    		shared_ptr<Cell> nextState(int liveNeighbors) const override;
-};
 
 #endif 
 

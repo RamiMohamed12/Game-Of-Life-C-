@@ -1,7 +1,7 @@
 #include"Cell.h"
 #include<iostream> 
-
-
+#include"AliveCell.h"
+#include"DeadCell.h" 
 bool AliveCell::Alive() const {
     return true;
 }
