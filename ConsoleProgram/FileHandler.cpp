@@ -75,7 +75,7 @@ void FileHandler::saveToFile(const string &outputFolder, int iteration, const ve
 				outFile<<(cells[y][x]->Alive() ? '1' : '0') << " ";  
 			
 			}
-
+			outFile <<'\n'; 
 		}
 }
 
