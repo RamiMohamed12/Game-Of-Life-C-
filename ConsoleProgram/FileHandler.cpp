@@ -8,6 +8,7 @@
 #include "AliveCell.h"
 #include "DeadCell.h"
 #include "Cell.h"
+#include<iomanip>
 #include<experimental/filesystem> 
 namespace fs = std::experimental::filesystem; 
 
@@ -101,7 +102,7 @@ void FileHandler::loadGridFromFile(const string &filename, vector<vector<shared_
 void FileHandler::saveToFile(const string &outputFolder, int iteration, const vector<vector<shared_ptr<Cell>>> &cells,int width,int height){
 
 	stringstream filename; 
-	filename <<outputFolder << "/generation_" << iteration << ".txt";
+	filename <<outputFolder << "/generation_" << setw(3) <<setfill('0') << iteration << ".txt";
 	ofstream outFile(filename.str()); 
 	
 		if (!outFile) {
