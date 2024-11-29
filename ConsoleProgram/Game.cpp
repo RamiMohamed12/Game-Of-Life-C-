@@ -14,6 +14,24 @@
 #include<chrono> 
 using namespace std;
 
+
+void clearScreen() {
+
+	cout << "\033[2J\033[1;1H";
+}
+
+void hideCursor() {
+
+    	cout << "\033[?25l";
+}
+
+void showCursor() {
+    
+	cout << "\033[?25h";
+
+}
+
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <input_file>\n";
@@ -35,7 +53,8 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     }
-
+    clearScreen();
+    hideCursor();
     int width, height;
     std::cout << "Enter grid width: ";
     std::cin >> width;
@@ -56,7 +75,6 @@ int main(int argc, char* argv[]) {
     int generation = 1;
 
 	 while(true) {		
-		
 		cout << "\rGeneration " << generation << ":\n"; 
 		grid.display(); 
 		try {
