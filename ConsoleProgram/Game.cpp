@@ -4,6 +4,15 @@
 #include <memory>
 #include "Grid.h"
 #include "FileHandler.h"
+#ifdef _WIN32
+	#include<windows.h> 
+#else 
+	#include<cstdlib> 
+	#include<unistd.h> 
+#endif
+#include<thread> 
+#include<chrono> 
+using namespace std;
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -46,33 +55,57 @@ int main(int argc, char* argv[]) {
 
     int generation = 1;
 
-    // Main loop for the simulation
-    while (true) {
-        std::cout << "Generation " << generation << ":\n";
-        grid.display(); // Display the grid's current state
-        
-        // Save the grid's current state to a file
-        try {
-            grid.saveToFile(outputFolder, generation, width, height);
-        } catch (const std::exception& e) {
-            std::cerr << "Cannot open file for saving grid state: " << e.what() << '\n';
-            return 1; // Exit if saving the state fails
-        }
+	 while(true) {		
+		
+		cout << "\rGeneration " << generation << ":\n"; 
+		grid.display(); 
+		try {
+		
+		grid.saveToFile(outputFolder, generation, width, height); 
 
-        // Update grid state based on the rules (e.g., Conway's Game of Life)
-        grid.update();
+		} catch (const exception& e) {
+		
+		cerr << "Cannot open file for saving grid state: " << e.what() << '\n'; 
+		return 1; 
+		}		
+		
+		grid.update(); 
+		generation++; 
+		cout << "Press SPACEBAR to continue, ESC to stop" << '\n'; 
 
-        generation++;  // Increment generation
-        
-        // Optional: Add a pause for visualization or any other condition to break the loop
-        char continueSimulation;
-        std::cout << "Do you want to continue to the next generation? (y/n): ";
-        std::cin >> continueSimulation;
-        if (continueSimulation != 'y') {
-            break;
-        }
-    }
+		while(true) {
+		
+		// This is for windows !
+		#ifdef _WIN32
+			if(GetAsyncKeyState(VK_SPACE) & 0x8000) {
+			
+			break;
+			
+			} if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
+			
+			return 0; 
+			
+			}
+		
+		}
+		// This is for Unix like systems ! 
+		#else 
+			system("stty raw");
+			char input = getchar(); 
+			system("stty cooked");
+		
+		if(input == ' ' ) {
+		
+			break; 
+		
+		} if (input == 27) {
+		
+		return 0; 
 
-    return 0;
+		}
+		#endif 
+		
+		this_thread::sleep_for(chrono::milliseconds(50)); 	
+	  }
+     }
 }
-

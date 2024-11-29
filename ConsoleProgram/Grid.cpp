@@ -86,18 +86,12 @@ bool Grid::hasChanged() const {
 	return false;
 }
 
-
 void Grid::display() const {
- 
-	for (int y = 0; y < height; ++y) {
-
-		for (int x = 0; x < width; ++x) {
-
-		cout << (cells[y][x]->Alive() ? '1' : '0') << ' ';
-
-	}
-        	cout << '\n';
+   	std::cout << std::flush;
+      for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            cout << (cells[y][x]->Alive() ? '1' : '0') << ' ';
+        }
+        cout << '\n';
     }
 }
-
-
