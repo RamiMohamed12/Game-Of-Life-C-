@@ -22,9 +22,9 @@ class Game {
                 void showCursor();
                 void setupOutputFolder();
                 void initializeGrid();
-                void gameLoop();
-
-
+                void gameLoop(int numGenerations);
+		int getNumberOfgenerations(); 
+		void manualGameLoop(); 
 };
 
 #endif

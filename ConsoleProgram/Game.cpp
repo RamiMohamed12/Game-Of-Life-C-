@@ -14,7 +14,6 @@ using namespace std;
 
 Game::Game(const std::string& inputFile) : inputFile(inputFile), generation(1) {
     outputFolder = inputFile + "_out";
-    // Grid object will be initialized later in initializeGrid()
 }
 
 void Game::run() {
@@ -22,7 +21,16 @@ void Game::run() {
     clearScreen();
     hideCursor();
     initializeGrid();
-    gameLoop();
+    int numGenerations = getNumberOfgenerations();
+    if (numGenerations > 0) {
+    
+    	gameLoop(numGenerations); 
+    
+    }	else {
+    
+    	manualGameLoop(); 
+
+    }
 }
 
 void Game::clearScreen() {
@@ -65,8 +73,17 @@ void Game::initializeGrid() {
     }
 }
 
-void Game::gameLoop() {
-    while (true) {
+
+int Game::getNumberOfgenerations(){
+
+	int numGenerations; 
+	cout << "Enter number of generations to simulate (or 0 for manual mode): "; 
+	cin >> numGenerations; 
+	return numGenerations; 
+}
+
+void Game::gameLoop(int numGenerations) {
+    while (generation <= numGenerations) {
         hideCursor();
         cout << "\rGeneration " << generation << ":\n"; 
         grid->display(); 
@@ -79,30 +96,52 @@ void Game::gameLoop() {
 
         grid->update(); 
         generation++; 
-        cout << "Press SPACEBAR to continue, ESC to stop" << '\n'; 
+        this_thread::sleep_for(chrono::milliseconds(500)); // Adjust delay as needed
+    }
+    showCursor(); // Ensure cursor is shown after loop ends
+    cout << "Simulation complete.\n";
+}
+
+void Game::manualGameLoop() {
+    while (true) {
+        hideCursor();
+        cout << "\rGeneration " << generation << ":\n";
+        grid->display();
+        try {
+            grid->saveToFile(outputFolder, generation, width, height);
+        } catch (const exception& e) {
+            cerr << "Cannot open file for saving grid state: " << e.what() << '\n';
+            exit(1);
+        }
+
+        grid->update();
+        generation++;
+        cout << "Press SPACEBAR to continue, ESC to stop" << '\n';
 
         while (true) {
             #ifdef _WIN32
                 if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
                     break;
-                } 
-                if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
-                    return; 
                 }
-            #else 
+                if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
+                    return;
+                }
+            #else
                 system("stty raw");
-                char input = getchar(); 
+                char input = getchar();
                 system("stty cooked");
 
                 if (input == ' ') {
-                    break; 
-                } 
-                if (input == 27) {
-                    return; 
+                    break;
                 }
-            #endif 
+                if (input == 27) {
+                    return;
+                }
+            #endif
 
-            this_thread::sleep_for(chrono::milliseconds(50)); 
+            this_thread::sleep_for(chrono::milliseconds(50));
         }
     }
 }
+
+
