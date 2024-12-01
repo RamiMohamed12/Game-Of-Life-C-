@@ -16,6 +16,16 @@ Game::Game(const std::string& inputFile) : inputFile(inputFile), generation(1) {
     outputFolder = inputFile + "_out";
 }
 
+int Game::getSimulationSpeed() {
+
+	int speed;
+	cout << "Enter simulation speed(milliseconds between generations, 1-1000): ";
+	cin >> speed;
+	return max(1, min(speed,1000));
+}
+
+
+
 void Game::run() {
     setupOutputFolder();
     clearScreen();
@@ -23,8 +33,8 @@ void Game::run() {
     initializeGrid();
     int numGenerations = getNumberOfgenerations();
     if (numGenerations > 0) {
-    
-    	gameLoop(numGenerations); 
+   	int simulationSpeed = getSimulationSpeed(); 
+    	gameLoop(numGenerations,simulationSpeed); 
     
     }	else {
     
@@ -82,7 +92,7 @@ int Game::getNumberOfgenerations(){
 	return numGenerations; 
 }
 
-void Game::gameLoop(int numGenerations) {
+void Game::gameLoop(int numGenerations,int simulationSpeed) {
     while (generation <= numGenerations) {
         hideCursor();
         cout << "\rGeneration " << generation << ":\n"; 
@@ -96,7 +106,7 @@ void Game::gameLoop(int numGenerations) {
 
         grid->update(); 
         generation++; 
-        this_thread::sleep_for(chrono::milliseconds(500)); // Adjust delay as needed
+        this_thread::sleep_for(chrono::milliseconds(simulationSpeed)); // Adjust delay as needed
     }
     showCursor(); // Ensure cursor is shown after loop ends
     cout << "Simulation complete.\n";
