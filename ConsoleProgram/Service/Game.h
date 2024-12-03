@@ -18,7 +18,7 @@ class Game {
                 int width,height; 
                 unique_ptr<Grid> grid;
                 void clearScreen();
-                void  hideCursor();
+                void hideCursor();
                 void showCursor();
                 void setupOutputFolder();
                 void initializeGrid();

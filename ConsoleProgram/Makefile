@@ -1,32 +1,35 @@
 # Nom de l'exécutable
 TARGET = GameOfLife
 
-# Fichiers source
-SRC = Game.cpp Grid.cpp AliveCell.cpp DeadCell.cpp FileHandler.cpp main.cpp
+# Dossiers des fichiers source
+SRC_DIRS = Composants Interface Service
 
-# Fichiers objets générés
-OBJ = $(SRC:.cpp=.o)
-
-# Compilateur et options
+# Extensions et variables
 CXX = g++
-CXXFLAGS = -Wall -std=c++17
+CXXFLAGS = -Wall -std=c++17 -IComposants -IService -IInterface
 LDFLAGS = -lstdc++fs  
 
-# Règle par défaut pour construire l'exécutable
+# Recherche automatique des fichiers source
+SRC = $(wildcard $(addsuffix /*.cpp, $(SRC_DIRS)))
+
+# Génération des fichiers objets
+OBJ = $(SRC:.cpp=.o)
+
+# Règle par défaut : construire l'exécutable
 all: $(TARGET)
 
-# Compilation de l'exécutable
+# Lien final de l'exécutable
 $(TARGET): $(OBJ)
-	$(CXX) $(CXXFLAGS) $(OBJ) -o $(TARGET) $(LDFLAGS)  
+	$(CXX) $(CXXFLAGS) $(OBJ) -o $@ $(LDFLAGS)
 
 # Compilation des fichiers objets
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Règle de nettoyage des fichiers générés
+# Nettoyage des fichiers générés
 clean:
 	rm -f $(OBJ) $(TARGET)
 
-# Refaire les dépendances (optionnel)
+# Reconstruction complète
 rebuild: clean all
 
