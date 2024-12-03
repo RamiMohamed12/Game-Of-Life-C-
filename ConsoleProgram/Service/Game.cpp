@@ -69,18 +69,18 @@ void Game::setupOutputFolder() {
 }
 
 void Game::initializeGrid() {
-    std::cout << "Enter grid width: ";
-    std::cin >> width;
-    std::cout << "Enter grid height: ";
-    std::cin >> height;
-    grid = std::make_unique<Grid>(width, height);  // Initialize Grid object here
+	try {
+	FileHandler::readGridDimensions(inputFile,width,height);
+	grid= make_unique<Grid>(width,height);
+	grid->loadFromFile(inputFile); 
+	} catch(const exception& e) {
+	
+		cerr<<"Error initializing grid:"<< e.what() << '\n'; 
+		exit(1); 
+	
+	}
 
-    try {
-        grid->loadFromFile(inputFile);
-    } catch (const std::exception& e) {
-        std::cerr << "Error loading grid from file: " << e.what() << '\n';
-        exit(1);
-    }
+
 }
 
 

@@ -71,33 +71,60 @@ void FileHandler::clearDirectory(const string &dir) {
 	}	
 }
 
-void FileHandler::loadGridFromFile(const string &filename, vector<vector<shared_ptr<Cell>>> &cells, int width,int height) {
 
-	ifstream inputFile(filename);
-    	
-	if (!inputFile) {
+void FileHandler::readGridDimensions(const string &filename, int& width, int& height) {
+
+	  ifstream inputFile(filename);
+    if (!inputFile) {
         throw runtime_error("Can't open input file!");
-    	}
+    }
+    
+    inputFile >> height >> width;
+    if (inputFile.fail()) {
+        throw runtime_error("Error reading grid dimensions from file!");
+    }
+}
 
-    	string line;
-   	int y = 0;
 
-    	while (getline(inputFile, line) && y < height) {
-        
-		stringstream ss(line);
-        
-		for (int x = 0; x < width && !ss.eof(); ++x) {
-            
-			int state;
-			ss >> state;
-       	    		cells[y][x] = state ? static_pointer_cast<Cell>(make_shared<AliveCell>()) : static_pointer_cast<Cell>(make_shared<DeadCell>());
 
-       	}
-        
-		++y;
+void FileHandler::loadGridFromFile(const string &filename, vector<vector<shared_ptr<Cell>>> &cells, int width, int height) {
+    ifstream inputFile(filename);
+    if (!inputFile) {
+        throw runtime_error("Can't open input file!");
     }
 
-}
+    // Skip the dimensions line
+    string dimensionsLine;
+    getline(inputFile, dimensionsLine);
+
+    // Read the grid state
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int state;
+            if (!(inputFile >> state)) {
+                throw runtime_error("Error reading grid state from file! File may be corrupted or incomplete.");
+            }
+            if (state != 0 && state != 1) {
+                throw runtime_error("Invalid cell state in file! Only 0 or 1 are allowed.");
+            }
+            // Fix: Cast to shared_ptr<Cell> for consistent types
+            cells[y][x] = state ? static_pointer_cast<Cell>(make_shared<AliveCell>()) 
+                               : static_pointer_cast<Cell>(make_shared<DeadCell>());
+        }
+        
+        // Skip any remaining characters until end of line
+        string dummy;
+        getline(inputFile, dummy);
+    }
+
+    // Fix: Corrected variable name extraLine
+    string extraLine;
+    if (getline(inputFile, extraLine) && !extraLine.empty()) {
+        throw runtime_error("Extra data found in file after grid!");
+    }
+}			
+
+
 
 void FileHandler::saveToFile(const string &outputFolder, int iteration, const vector<vector<shared_ptr<Cell>>> &cells,int width,int height){
 

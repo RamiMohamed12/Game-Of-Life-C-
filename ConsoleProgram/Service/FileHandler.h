@@ -14,7 +14,11 @@ class FileHandler {
 	static void saveToFile(const string &outputFolder,int iteration,const vector<vector<shared_ptr<Cell>>>& cells,int width,int height); 
 	static void loadGridFromFile(const string& filename,vector<vector<shared_ptr<Cell>>>& cells,int width, int height);
 	static void clearDirectory(const string& dir); 
+	static void readGridDimensions(const string& filename,int& width,int& height);
+
 };
+
+
 
 
 #endif 
