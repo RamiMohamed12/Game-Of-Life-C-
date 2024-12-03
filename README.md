@@ -27,16 +27,18 @@ Ensuite, accédez au répertoire du projet cloné :
 
     cd ConsoleProgram
 
-Avant de lancer le programme, vous devez vous assurer que le fichier input_file contient l'état initial de la grille dans un format spécifique. 
+**Configuration du fichier d'entrée**
 
-Ouvrez le fichier input_file et modifiez son contenu pour qu'il ressemble à ceci (c'est un exemple pour une grille 7x5) :
+Avant de lancer le programme, vous devez configurer le fichier input_file contenant l'état initial de la grille. Voici un exemple pour une grille 5x5 avec ses dimensions incluses :
 
-    0 0 1 0 1
-    0 1 1 1 1
-    0 0 1 0 1
-    0 0 1 0 1
-    0 1 1 1 1
-    0 0 1 0 1
+    5 5
+    0 0 0 0 0
+    0 0 1 0 0
+    0 0 0 1 0
+    0 1 1 1 0
+    0 0 0 0 0
+
+Ici, 5 représente la hauteur, et 5 la largeur de la grille.
 
 Compiler le programme avec make
 
@@ -48,15 +50,22 @@ Exécutez le programme après la compilation :
 
     ./GameOfLife input_file
 
-Interaction avec le programme
+**Interaction avec le programme**
 
-Le programme va vous demander les dimensions de la grille (largeur et hauteur), puis il lira l'état initial depuis le fichier input_file, affichera la grille et vous demandera si vous voulez passer à la génération suivante.
+Choix du mode d'exécution :
 
-Si vous appuyez sur y, il mettra à jour la grille en fonction des règles du jeu de la vie. Vous pourrez continuer à appuyer sur y pour avancer à la prochaine génération ou appuyer sur n pour arrêter.
+Lorsque le programme démarre, il vous demande combien de générations vous souhaitez simuler. Vous avez deux options :
 
-Après chaque génération, le programme sauvegarde l'état actuel de la grille dans un répertoire nommé input_file_out. Ce répertoire sera créé automatiquement si nécessaire.
+Nombre fixe de générations :
+        Entrez un entier correspondant au nombre de générations à simuler.
+        Le programme vous demandera la vitesse de simulation (en millisecondes entre chaque génération).
+        Une fois configuré, la simulation démarre automatiquement.
 
-Ouvrir le répertoire de sortie : Le programme créera un dossier input_file_out où il enregistrera chaque génération sous la forme de fichiers nommés generation_number.txt (par exemple, generation_1.txt, generation_2.txt, etc.).
+Mode manuel :
+        Entrez 0 pour activer le mode manuel.
+        En mode manuel :
+            Appuyez sur ESPACE pour avancer à la génération suivante.
+            Appuyez sur ESC pour arrêter la simulation.
 
 Vérifier les fichiers de générations : Vous pouvez vérifier l'état des générations sauvegardées dans le répertoire input_file_out en listant les fichiers :
 
