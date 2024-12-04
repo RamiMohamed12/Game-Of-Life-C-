@@ -1,4 +1,4 @@
-#include "Patterns.h"
+#include "Pattern.h"
 
 const std::map<std::string, Grid>& Patterns::getPatterns() {
     static const std::map<std::string, Grid> patterns = {

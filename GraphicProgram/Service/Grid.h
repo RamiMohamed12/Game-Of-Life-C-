@@ -1,9 +1,9 @@
 #ifndef GRILLE_H
 #define GRILLE_H
 
-#include "Composants/Cellule.h"
-#include "Composants/AliveCell.h"
-#include "Composants/DeadCell.h"
+#include "Cellule.h"
+#include "AliveCell.h"
+#include "DeadCell.h"
 #include <vector>
 
 class Grille {

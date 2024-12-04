@@ -1,4 +1,4 @@
-#include "IHM/Interface.h"
+#include "Interface.h"
 
 int main() {
     Interface interface(50, 50, 10);

@@ -1,7 +1,7 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
-#include "Grille.h"
+#include "Grid.h"
 #include <SFML/Graphics.hpp>
 
 class Interface {
