@@ -11,7 +11,10 @@ class Game {
         public : 
                 Game(const string& inputFile); 
                 void run(); 
-        private : 
+       		static const int STABILITY_THRESHOLD = 5; 
+		int stableCount = 0; 
+		bool isStable() const; 
+       	private : 
                 string inputFile;
                 string outputFolder; 
                 int generation;
