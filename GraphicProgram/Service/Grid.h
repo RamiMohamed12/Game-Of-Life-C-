@@ -19,6 +19,7 @@ private:
     int hauteur;
     std::vector<std::vector<Cellule*>> cellules;
     void calculerVoisins(std::vector<std::vector<int>>& voisins) const;
+    int compterVoisinsVivants(int x, int y) const;  // Added this declaration
 };
 
 #endif
