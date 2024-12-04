@@ -25,12 +25,12 @@ void Game::handleEvents() {
             window.close();
         if (event.type == sf::Event::KeyPressed) {
             if (event.key.code == sf::Keyboard::Space) {
-                isRunning = !isRunning; // Basculer entre pause et simulation
+                isRunning = !isRunning;
             }
             if (event.key.code == sf::Keyboard::R) {
-                reset(); // Réinitialiser la grille
+                reset(); 
             }
-            // Sélection des motifs
+           
             if (event.key.code == sf::Keyboard::Num1) {
                 selectedPattern = "Glider";
                 manualMode = false;
@@ -44,21 +44,21 @@ void Game::handleEvents() {
                 manualMode = false;
             }
             if (event.key.code == sf::Keyboard::Num4) {
-                manualMode = true; // Activer le mode manuel
+                manualMode = true; 
             }
         }
 
-        // Interaction avec la souris
+        
         if (event.type == sf::Event::MouseButtonPressed) {
             if (event.mouseButton.button == sf::Mouse::Left) {
                 int x = event.mouseButton.x / 15;
                 int y = event.mouseButton.y / 15;
                 if (x >= 0 && x < 50 && y >= 0 && y < 50) {
                     if (manualMode) {
-                        grid.setCell(x, y, !grid.getCell(x, y)); // Changer l'état de la cellule
+                        grid.setCell(x, y, !grid.getCell(x, y)); 
                     }
                     else {
-                        Pattern::insertPattern(grid, patterns[selectedPattern], x, y); // Insérer le motif
+                        Pattern::insertPattern(grid, patterns[selectedPattern], x, y);
                     }
                 }
             }
@@ -76,22 +76,22 @@ void Game::update() {
 void Game::draw() {
     window.clear(sf::Color(10, 10, 30));
 
-    // Dessiner la grille
+    
     for (int y = 0; y < grid.getHeight(); ++y) {
         for (int x = 0; x < grid.getWidth(); ++x) {
             sf::RectangleShape cell(sf::Vector2f(15 - 2, 15 - 2));
             cell.setPosition(x * 15, y * 15);
             if (grid.getCell(x, y)) {
-                cell.setFillColor(sf::Color(0, 255, 150)); // Couleur des cellules vivantes
+                cell.setFillColor(sf::Color(0, 255, 150)); 
             }
             else {
-                cell.setFillColor(sf::Color(30, 30, 30)); // Couleur des cellules mortes
+                cell.setFillColor(sf::Color(30, 30, 30)); 
             }
             window.draw(cell);
         }
     }
 
-    // Afficher le mode ou motif sélectionné
+    
     sf::Font font;
     if (font.loadFromFile("arial.ttf")) {
         sf::Text modeText;
@@ -112,5 +112,5 @@ void Game::draw() {
 }
 
 void Game::reset() {
-    grid.reset(); // Réinitialiser la grille
+    grid.reset(); 
 }

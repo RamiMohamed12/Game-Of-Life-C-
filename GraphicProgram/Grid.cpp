@@ -24,7 +24,7 @@ bool Grid::getCell(int x, int y) const {
 }
 
 void Grid::updateGrid() {
-    // Mise à jour de la grille selon les règles du Jeu de la Vie
+    
     std::vector<std::vector<bool>> nextGrid = grid;
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
