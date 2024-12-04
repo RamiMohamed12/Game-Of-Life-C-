@@ -55,6 +55,10 @@ void Game::showCursor() {
     cout << "\033[?25h";
 }
 
+bool Game::isStable() const {
+	return !grid->hasChanged(); 
+}
+
 void Game::setupOutputFolder() {
     if (!FileHandler::directoryExists(outputFolder)) {
         FileHandler::createDirectory(outputFolder);
@@ -92,23 +96,35 @@ int Game::getNumberOfgenerations(){
 	return numGenerations; 
 }
 
-void Game::gameLoop(int numGenerations,int simulationSpeed) {
+
+void Game::gameLoop(int numGenerations, int simulationSpeed) {
     while (generation <= numGenerations) {
         hideCursor();
-        cout << "\rGeneration " << generation << ":\n"; 
-        grid->display(); 
+        cout << "\rGeneration " << generation << ":\n";
+        grid->display();
         try {
-            grid->saveToFile(outputFolder, generation, width, height); 
+            grid->saveToFile(outputFolder, generation, width, height);
         } catch (const exception& e) {
-            cerr << "Cannot open file for saving grid state: " << e.what() << '\n'; 
-            exit(1); 
+            cerr << "Cannot open file for saving grid state: " << e.what() << '\n';
+            exit(1);
         }
 
-        grid->update(); 
-        generation++; 
-        this_thread::sleep_for(chrono::milliseconds(simulationSpeed)); // Adjust delay as needed
+        if (isStable()) {
+            stableCount++;
+            if (stableCount >= STABILITY_THRESHOLD) {
+                cout << "\nPattern has stabilized! No further changes will occur.\n";
+                showCursor();
+                return;
+            }
+        } else {
+            stableCount = 0;
+        }
+
+        grid->update();
+        generation++;
+        this_thread::sleep_for(chrono::milliseconds(simulationSpeed));
     }
-    showCursor(); // Ensure cursor is shown after loop ends
+    showCursor();
     cout << "Simulation complete.\n";
 }
 
