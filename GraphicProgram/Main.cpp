@@ -1,8 +1,7 @@
-#include <SFML/Graphics.hpp>
-#include "Game.h"
+#include "IHM/Interface.h"
 
 int main() {
-    Game game;
-    game.run();
+    Interface interface(50, 50, 10);
+    interface.executer();
     return 0;
 }
