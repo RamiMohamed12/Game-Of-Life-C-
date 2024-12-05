@@ -170,4 +170,15 @@ void Game::manualGameLoop() {
     }
 }
 
+bool Game::isCellAlive(int x, int y) const {
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+        return grid->celluleVivante(x, y);
+    }
+    return false;
+}
 
+void Game::toggleCell(int x, int y) {
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+        grid->activerCellule(x, y);
+    }
+}
