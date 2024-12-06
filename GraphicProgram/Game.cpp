@@ -18,7 +18,7 @@ Game::Game()
     window.setFramerateLimit(60);
     loadPatterns();
 
-    if (!font.loadFromFile("/usr/share/fonts/adobe-source-code-pro-fonts/SourceCodePro-Medium.otf")) {
+    if (!font.loadFromFile("/home/ramimohamed/.local/share/fonts/Ubuntu-M.ttf")) {
         std::cerr << "Error loading font!" << std::endl;
         throw std::runtime_error("Failed to load font");
     }
