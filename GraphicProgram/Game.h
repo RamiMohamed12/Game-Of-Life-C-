@@ -4,14 +4,19 @@
 #include <SFML/Graphics.hpp>
 #include "Grid.h"
 #include "Pattern.h"
+#include "Menu.h"
+#include "GridSizeSelector.h"
 #include <string>
 #include <map>
 #include <fstream>
+#include <sstream>
+#include <iomanip>
 
 enum class GameState {
     Menu,
+    GridSelection,
     Playing,
-    Tutorial  // Add Tutorial state
+    Tutorial
 };
 
 class Game {
@@ -21,6 +26,7 @@ public:
 
 private:
     static const int CELL_SIZE = 15;
+    static const int TOTAL_TUTORIAL_PAGES = 2;
 
     // Colors
     const sf::Color BACKGROUND_COLOR = sf::Color(18, 18, 24);
@@ -36,34 +42,51 @@ private:
     const int STATUS_FONT_SIZE = 20;
     const sf::Time SAVE_MESSAGE_DURATION = sf::seconds(2);
 
-    // Member variables in initialization order
+    // Simulation control
+    float simulationSpeed = 1.0f;
+    const float MIN_SPEED = 0.25f;
+    const float MAX_SPEED = 4.0f;
+    float zoomLevel = 1.0f;
+    const float MIN_ZOOM = 0.25f;
+    const float MAX_ZOOM = 4.0f;
+    sf::Vector2f viewOffset{ 0.0f, 0.0f };
+    int generation = 0;
+    sf::Clock fpsClock;
+    float fps = 0.0f;
+    int livingCells = 0;
+    int currentTutorialPage = 1;
+
     sf::RenderWindow window;
-    int gridSize;  // Must be before grid
+    sf::Font font;
+    int gridSize;
     Grid grid;
     bool isRunning;
     std::string selectedPattern;
     bool manualMode;
     sf::Clock clock;
-    sf::Font font;
     std::map<std::string, std::vector<std::vector<bool>>> patterns;
     GameState gameState;
-    std::vector<std::string> menuItems;
-    int selectedMenuItem;
+    Menu menu;
+    GridSizeSelector gridSelector;
     std::string saveMessage;
     sf::Clock saveMessageClock;
 
-    // Member functions
     void handleEvents();
     void update();
     void draw();
-    void drawMenu();
-    void drawTutorial();  // Add this declaration
+    void drawTutorial();
+    void drawTutorialPage1();
+    void drawTutorialPage2();
+    void drawTutorialArrows();
     void reset();
     void loadPatterns();
-    void handleMenuEvents(const sf::Event& event);
     void saveGame();
     void loadGame();
-    void selectMenuItem();
+    void processMenuSelection();
+    void handleZoom(float delta);
+    void handlePan(const sf::Vector2f& delta);
+    void updateStats();
+    void drawStats();
 };
 
 #endif
