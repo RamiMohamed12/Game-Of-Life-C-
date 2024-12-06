@@ -4,25 +4,27 @@
 
 Game::Game()
     : window(sf::VideoMode::getDesktopMode(), "Game of Life", sf::Style::Fullscreen)
+    , font()
+    , menu(window, font)
+    , gridSelector(window, font)
+    , gameState(GameState::Menu)
     , gridSize(50)
     , grid(50, 50)
     , isRunning(false)
     , selectedPattern("Glider")
     , manualMode(false)
-    , gameState(GameState::Menu)
-    , menu(window, font)
-    , gridSelector(window, font)
     , currentTutorialPage(1) {
 
     window.setFramerateLimit(60);
     loadPatterns();
 
-    // Chargement de la police
     if (!font.loadFromFile("/usr/share/fonts/adobe-source-code-pro-fonts/SourceCodePro-Medium.otf")) {
         std::cerr << "Error loading font!" << std::endl;
         throw std::runtime_error("Failed to load font");
     }
 }
+
+
 
 void Game::run() {
     while (window.isOpen()) {
