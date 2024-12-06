@@ -1,9 +1,8 @@
 #ifndef GRID_H
 #define GRID_H
 
+#include <SFML/Graphics.hpp>
 #include <vector>
-#include <memory>
-#include "Cell.h"
 
 class Grid {
 public:
@@ -18,7 +17,8 @@ public:
 
 private:
     int width, height;
-    std::vector<std::vector<std::shared_ptr<Cell>>> cells; // Use shared_ptr<Cell>
+    std::vector<std::vector<bool>> cells;
+    std::vector<std::vector<bool>> nextCells;
     int countLiveNeighbors(int x, int y) const;
 };
 
