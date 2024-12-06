@@ -18,7 +18,7 @@ Game::Game()
     loadPatterns();
 
     // Chargement de la police
-    if (!font.loadFromFile("C:\\Users\\THINKPAD\\AppData\\Local\\Microsoft\\Windows\\Fonts\\SourceCodePro-VariableFont_wght.ttf")) {
+    if (!font.loadFromFile("/usr/share/fonts/adobe-source-code-pro-fonts/SourceCodePro-Medium.otf")) {
         std::cerr << "Error loading font!" << std::endl;
         throw std::runtime_error("Failed to load font");
     }

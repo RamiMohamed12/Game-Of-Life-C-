@@ -16,7 +16,9 @@ SOURCES = $(SRC_DIR)/Main.cpp \
           $(SRC_DIR)/Grid.cpp \
           $(SRC_DIR)/Pattern.cpp \
           $(SRC_DIR)/AliveCell.cpp \
-          $(SRC_DIR)/DeadCell.cpp
+          $(SRC_DIR)/DeadCell.cpp \
+          $(SRC_DIR)/Menu.cpp \
+          $(SRC_DIR)/GridSizeSelector.cpp
 
 # Object files
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
@@ -43,3 +45,4 @@ clean:
 rebuild: clean all
 
 .PHONY: all clean rebuild
+
