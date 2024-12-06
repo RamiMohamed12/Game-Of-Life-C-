@@ -4,42 +4,24 @@
 
 Game::Game()
     : window(sf::VideoMode::getDesktopMode(), "Game of Life", sf::Style::Fullscreen)
-    , gridSize(window.getSize().x / CELL_SIZE)
-    , grid(gridSize, gridSize)
+    , gridSize(50)
+    , grid(50, 50)
     , isRunning(false)
     , selectedPattern("Glider")
     , manualMode(false)
     , gameState(GameState::Menu)
-    , selectedMenuItem(0) {
+    , menu(window, font)
+    , gridSelector(window, font)
+    , currentTutorialPage(1) {
 
     window.setFramerateLimit(60);
     loadPatterns();
 
-    if (!font.loadFromFile("/usr/share/fonts/adobe-source-code-pro-fonts/SourceCodePro-Medium.otf")) {
+    // Chargement de la police
+    if (!font.loadFromFile("C:\\Users\\THINKPAD\\AppData\\Local\\Microsoft\\Windows\\Fonts\\SourceCodePro-VariableFont_wght.ttf")) {
         std::cerr << "Error loading font!" << std::endl;
         throw std::runtime_error("Failed to load font");
     }
-
-    menuItems = { "Start Game", "Load Game", "Tutorial", "Exit" };
-}
-
-void Game::loadPatterns() {
-    patterns["Glider"] = {
-        {0, 1, 0},
-        {0, 0, 1},
-        {1, 1, 1}
-    };
-    patterns["Small Exploder"] = {
-        {0, 1, 0},
-        {1, 1, 1},
-        {1, 0, 1}
-    };
-    patterns["Spaceship"] = {
-        {0, 1, 1, 1, 0},
-        {1, 0, 0, 0, 1},
-        {0, 0, 0, 0, 1},
-        {1, 0, 0, 1, 0}
-    };
 }
 
 void Game::run() {
@@ -47,7 +29,21 @@ void Game::run() {
         handleEvents();
 
         if (gameState == GameState::Menu) {
-            drawMenu();
+            menu.draw();
+            if (menu.isItemSelected()) {
+                processMenuSelection();
+                menu.resetSelection();
+            }
+        }
+        else if (gameState == GameState::GridSelection) {
+            gridSelector.draw();
+            if (gridSelector.isConfirmed()) {
+                gridSize = gridSelector.getCols();
+                grid = Grid(gridSelector.getCols(), gridSelector.getRows());
+                gameState = GameState::Playing;
+                gridSelector.reset();
+                reset();
+            }
         }
         else if (gameState == GameState::Tutorial) {
             drawTutorial();
@@ -59,140 +55,6 @@ void Game::run() {
     }
 }
 
-void Game::update() {
-    if (isRunning && clock.getElapsedTime().asMilliseconds() > 100) {
-        grid.updateGrid();
-        clock.restart();
-    }
-}
-
-void Game::drawMenu() {
-    window.clear(BACKGROUND_COLOR);
-
-    // Draw title
-    sf::Text titleText;
-    titleText.setFont(font);
-    titleText.setString("Game of Life");
-    titleText.setCharacterSize(MENU_FONT_SIZE * 1.5);
-    titleText.setFillColor(MENU_SELECTED_COLOR);
-    titleText.setStyle(sf::Text::Bold);
-
-    // Center the title
-    sf::FloatRect titleRect = titleText.getLocalBounds();
-    titleText.setPosition(
-        (gridSize * CELL_SIZE - titleRect.width) / 2,
-        gridSize * CELL_SIZE * 0.2f
-    );
-
-    window.draw(titleText);
-
-    // Draw menu items
-    float startY = (gridSize * CELL_SIZE - menuItems.size() * MENU_ITEM_HEIGHT) / 2;
-
-    for (size_t i = 0; i < menuItems.size(); ++i) {
-        sf::Text menuText;
-        menuText.setFont(font);
-        menuText.setString(menuItems[i]);
-        menuText.setCharacterSize(MENU_FONT_SIZE);
-
-        // Create selection indicator
-        if (static_cast<int>(i) == selectedMenuItem) {
-            menuText.setFillColor(MENU_SELECTED_COLOR);
-
-            // Draw selection indicator
-            sf::RectangleShape indicator(sf::Vector2f(4, MENU_FONT_SIZE));
-            indicator.setFillColor(MENU_SELECTED_COLOR);
-            indicator.setPosition(
-                (gridSize * CELL_SIZE - menuText.getLocalBounds().width) / 2 - 20,
-                startY + i * MENU_ITEM_HEIGHT + MENU_FONT_SIZE / 2
-            );
-            window.draw(indicator);
-        }
-        else {
-            menuText.setFillColor(MENU_NORMAL_COLOR);
-        }
-
-        // Center the text
-        sf::FloatRect textRect = menuText.getLocalBounds();
-        menuText.setPosition(
-            (gridSize * CELL_SIZE - textRect.width) / 2,
-            startY + i * MENU_ITEM_HEIGHT
-        );
-
-        window.draw(menuText);
-    }
-
-    // Draw instructions
-    sf::Text instructionText;
-    instructionText.setFont(font);
-    instructionText.setString("Use arrow keys or mouse to navigate, Enter to select");
-    instructionText.setCharacterSize(STATUS_FONT_SIZE);
-    instructionText.setFillColor(sf::Color(128, 128, 128));
-
-    // Position at bottom
-    sf::FloatRect instrRect = instructionText.getLocalBounds();
-    instructionText.setPosition(
-        (gridSize * CELL_SIZE - instrRect.width) / 2,
-        gridSize * CELL_SIZE * 0.8f
-    );
-
-    window.draw(instructionText);
-    window.display();
-}
-
-void Game::draw() {
-    window.clear(BACKGROUND_COLOR);
-
-    // Draw the grid
-    grid.draw(window, CELL_SIZE);
-
-    // Draw status bar background
-    sf::RectangleShape statusBar(sf::Vector2f(gridSize * CELL_SIZE, 40));
-    statusBar.setFillColor(sf::Color(24, 24, 29));
-    statusBar.setPosition(0, grid.getHeight() * CELL_SIZE - 40);
-    window.draw(statusBar);
-
-    // Display the mode or selected pattern
-    sf::Text statusText;
-    statusText.setFont(font);
-
-    std::string statusString;
-    if (manualMode) {
-        statusString = "Mode: Manual";
-    }
-    else {
-        statusString = "Pattern: " + selectedPattern;
-    }
-
-    // Add controls hint
-    statusString += "    |    Space: Play/Pause    |    S: Save    |    Esc: Menu";
-
-    statusText.setString(statusString);
-    statusText.setCharacterSize(STATUS_FONT_SIZE);
-    statusText.setFillColor(MENU_NORMAL_COLOR);
-    statusText.setPosition(10, grid.getHeight() * CELL_SIZE - 30);
-    window.draw(statusText);
-
-    // Display save message if recent
-    if (saveMessageClock.getElapsedTime() < SAVE_MESSAGE_DURATION) {
-        sf::Text saveText;
-        saveText.setFont(font);
-        saveText.setString(saveMessage);
-        saveText.setCharacterSize(STATUS_FONT_SIZE);
-        saveText.setFillColor(MENU_SELECTED_COLOR);
-
-        sf::FloatRect textRect = saveText.getLocalBounds();
-        saveText.setPosition(
-            (gridSize * CELL_SIZE - textRect.width) / 2,
-            grid.getHeight() * CELL_SIZE * 0.1f
-        );
-
-        window.draw(saveText);
-    }
-
-    window.display();
-}
-
 void Game::handleEvents() {
     sf::Event event;
     while (window.pollEvent(event)) {
@@ -200,7 +62,26 @@ void Game::handleEvents() {
             window.close();
 
         if (gameState == GameState::Menu) {
-            handleMenuEvents(event);
+            menu.handleEvents(event);
+        }
+        else if (gameState == GameState::GridSelection) {
+            gridSelector.handleEvents(event);
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                gameState = GameState::Menu;
+            }
+        }
+        else if (gameState == GameState::Tutorial) {
+            if (event.type == sf::Event::KeyPressed) {
+                if (event.key.code == sf::Keyboard::Escape) {
+                    gameState = GameState::Menu;
+                }
+                else if (event.key.code == sf::Keyboard::Left && currentTutorialPage > 1) {
+                    currentTutorialPage--;
+                }
+                else if (event.key.code == sf::Keyboard::Right && currentTutorialPage < TOTAL_TUTORIAL_PAGES) {
+                    currentTutorialPage++;
+                }
+            }
         }
         else {
             if (event.type == sf::Event::KeyPressed) {
@@ -229,14 +110,46 @@ void Game::handleEvents() {
                     manualMode = false;
                 }
                 if (event.key.code == sf::Keyboard::Num4) {
+                    selectedPattern = "Pulsar";
+                    manualMode = false;
+                }
+                if (event.key.code == sf::Keyboard::Num5) {
                     manualMode = true;
+                }
+                if (event.key.code == sf::Keyboard::Add || event.key.code == sf::Keyboard::Equal) {
+                    simulationSpeed = std::min(simulationSpeed * 1.2f, MAX_SPEED);
+                }
+                if (event.key.code == sf::Keyboard::Subtract || event.key.code == sf::Keyboard::Dash) {
+                    simulationSpeed = std::max(simulationSpeed / 1.2f, MIN_SPEED);
+                }
+                if (event.key.code == sf::Keyboard::Z) {
+                    handleZoom(1.1f);
+                }
+                if (event.key.code == sf::Keyboard::X) {
+                    handleZoom(0.9f);
+                }
+                if (event.key.code == sf::Keyboard::Left) {
+                    handlePan(sf::Vector2f(50.0f, 0.0f));
+                }
+                if (event.key.code == sf::Keyboard::Right) {
+                    handlePan(sf::Vector2f(-50.0f, 0.0f));
+                }
+                if (event.key.code == sf::Keyboard::Up) {
+                    handlePan(sf::Vector2f(0.0f, 50.0f));
+                }
+                if (event.key.code == sf::Keyboard::Down) {
+                    handlePan(sf::Vector2f(0.0f, -50.0f));
                 }
             }
 
             if (event.type == sf::Event::MouseButtonPressed) {
                 if (event.mouseButton.button == sf::Mouse::Left) {
-                    int x = event.mouseButton.x / CELL_SIZE;
-                    int y = event.mouseButton.y / CELL_SIZE;
+                    sf::Vector2f worldPos = window.mapPixelToCoords(
+                        sf::Vector2i(event.mouseButton.x, event.mouseButton.y)
+                    );
+                    int x = static_cast<int>(worldPos.x / CELL_SIZE);
+                    int y = static_cast<int>(worldPos.y / CELL_SIZE);
+
                     if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
                         if (manualMode) {
                             grid.setCell(x, y, !grid.getCellState(x, y));
@@ -251,65 +164,239 @@ void Game::handleEvents() {
     }
 }
 
-void Game::handleMenuEvents(const sf::Event& event) {
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::Up) {
-            selectedMenuItem = (selectedMenuItem - 1 + menuItems.size()) % menuItems.size();
-        }
-        if (event.key.code == sf::Keyboard::Down) {
-            selectedMenuItem = (selectedMenuItem + 1) % menuItems.size();
-        }
-        if (event.key.code == sf::Keyboard::Return) {
-            selectMenuItem();
-        }
+void Game::update() {
+    if (isRunning && clock.getElapsedTime().asMilliseconds() > 100 / simulationSpeed) {
+        grid.updateGrid();
+        generation++;
+        clock.restart();
+    }
+    updateStats();
+}
+
+void Game::draw() {
+    window.clear(BACKGROUND_COLOR);
+
+    // Appliquer le zoom et le déplacement
+    sf::View view = window.getDefaultView();
+    view.zoom(1.0f / zoomLevel);
+    view.move(viewOffset);
+    window.setView(view);
+
+    grid.draw(window, CELL_SIZE);
+
+    // Revenir à la vue par défaut pour l'interface
+    window.setView(window.getDefaultView());
+
+    drawStats();
+
+    // Barre de statut
+    sf::RectangleShape statusBar(sf::Vector2f(window.getSize().x, 40));
+    statusBar.setFillColor(sf::Color(24, 24, 29));
+    statusBar.setPosition(0, window.getSize().y - 40);
+    window.draw(statusBar);
+
+    // Texte de statut
+    sf::Text statusText;
+    statusText.setFont(font);
+    std::string statusString = manualMode ? "Mode: Manual" : "Pattern: " + selectedPattern;
+    statusString += "    |    Space: Play/Pause    |    S: Save    |    Esc: Menu";
+    statusText.setString(statusString);
+    statusText.setCharacterSize(STATUS_FONT_SIZE);
+    statusText.setFillColor(MENU_NORMAL_COLOR);
+    statusText.setPosition(10, window.getSize().y - 30);
+    window.draw(statusText);
+
+    // Message de sauvegarde
+    if (saveMessageClock.getElapsedTime() < SAVE_MESSAGE_DURATION) {
+        sf::Text saveText;
+        saveText.setFont(font);
+        saveText.setString(saveMessage);
+        saveText.setCharacterSize(STATUS_FONT_SIZE);
+        saveText.setFillColor(MENU_SELECTED_COLOR);
+        sf::FloatRect textRect = saveText.getLocalBounds();
+        saveText.setPosition(
+            (window.getSize().x - textRect.width) / 2,
+            window.getSize().y * 0.1f
+        );
+        window.draw(saveText);
     }
 
-    if (event.type == sf::Event::MouseButtonPressed) {
-        if (event.mouseButton.button == sf::Mouse::Left) {
-            float startY = (gridSize * CELL_SIZE - menuItems.size() * MENU_ITEM_HEIGHT) / 2;
-            for (size_t i = 0; i < menuItems.size(); ++i) {
-                sf::FloatRect menuItemRect(
-                    (gridSize * CELL_SIZE - MENU_FONT_SIZE * menuItems[i].size()) / 2,
-                    startY + i * MENU_ITEM_HEIGHT,
-                    MENU_FONT_SIZE * menuItems[i].size(),
-                    MENU_ITEM_HEIGHT
-                );
-                if (menuItemRect.contains(event.mouseButton.x, event.mouseButton.y)) {
-                    selectedMenuItem = i;
-                    selectMenuItem();
-                }
-            }
-        }
+    window.display();
+}
+
+void Game::drawStats() {
+    sf::Text statsText;
+    statsText.setFont(font);
+    statsText.setCharacterSize(16);
+    statsText.setFillColor(MENU_NORMAL_COLOR);
+
+    std::stringstream ss;
+    ss << "FPS: " << static_cast<int>(fps)
+        << " | Generation: " << generation
+        << " | Living Cells: " << livingCells
+        << " | Speed: x" << std::fixed << std::setprecision(2) << simulationSpeed
+        << " | Zoom: x" << std::fixed << std::setprecision(2) << zoomLevel;
+
+    statsText.setString(ss.str());
+    statsText.setPosition(10, 10);
+    window.draw(statsText);
+}
+
+void Game::drawTutorialPage1() {
+    sf::Text titleText;
+    titleText.setFont(font);
+    titleText.setString("Game of Life - Basic Controls");
+    titleText.setCharacterSize(50);
+    titleText.setFillColor(MENU_SELECTED_COLOR);
+    titleText.setStyle(sf::Text::Bold);
+
+    sf::FloatRect titleRect = titleText.getLocalBounds();
+    titleText.setOrigin(titleRect.width / 2.0f, titleRect.height / 2.0f);
+    titleText.setPosition(window.getSize().x / 2.0f, 200);
+    window.draw(titleText);
+
+    sf::Text controlsText;
+    controlsText.setFont(font);
+    controlsText.setString(
+        "SPACE BAR: Pause/Simulate\n"
+        "1-4: Select Patterns\n"
+        "5: Manual Mode\n"
+        "S: Save Game\n"
+        "R: Reset Grid\n"
+        "+/-: Adjust Speed\n"
+        "Z/X: Zoom In/Out\n"
+        "Arrow Keys: Pan View"
+    );
+    controlsText.setCharacterSize(32);
+    controlsText.setFillColor(MENU_NORMAL_COLOR);
+
+    sf::FloatRect controlsRect = controlsText.getLocalBounds();
+    controlsText.setOrigin(controlsRect.width / 2.0f, controlsRect.height / 2.0f);
+    controlsText.setPosition(window.getSize().x / 2.0f, 400);
+    window.draw(controlsText);
+}
+
+void Game::drawTutorialPage2() {
+    sf::Text titleText;
+    titleText.setFont(font);
+    titleText.setString("Game of Life - Grid Controls");
+    titleText.setCharacterSize(50);
+    titleText.setFillColor(MENU_SELECTED_COLOR);
+    titleText.setStyle(sf::Text::Bold);
+
+    sf::FloatRect titleRect = titleText.getLocalBounds();
+    titleText.setOrigin(titleRect.width / 2.0f, titleRect.height / 2.0f);
+    titleText.setPosition(window.getSize().x / 2.0f, 200);
+    window.draw(titleText);
+
+    sf::Text controlsText;
+    controlsText.setFont(font);
+    controlsText.setString(
+        "Grid Size Selection:\n"
+        "Tab: Switch between Rows/Columns\n"
+        "Up/Down: Adjust Values\n"
+        "Enter: Confirm Size\n\n"
+        "Mouse Controls:\n"
+        "Left Click: Place Pattern/Toggle Cell\n"
+        "ESC: Back to Menu"
+    );
+    controlsText.setCharacterSize(32);
+    controlsText.setFillColor(MENU_NORMAL_COLOR);
+
+    sf::FloatRect controlsRect = controlsText.getLocalBounds();
+    controlsText.setOrigin(controlsRect.width / 2.0f, controlsRect.height / 2.0f);
+    controlsText.setPosition(window.getSize().x / 2.0f, 400);
+    window.draw(controlsText);
+}
+
+void Game::drawTutorialArrows() {
+    sf::Text arrowText;
+    arrowText.setFont(font);
+    arrowText.setCharacterSize(32);
+    arrowText.setFillColor(MENU_NORMAL_COLOR);
+
+    // Flèche gauche
+    if (currentTutorialPage > 1) {
+        arrowText.setString("< Previous");
+        arrowText.setPosition(50, window.getSize().y / 2.0f);
+        window.draw(arrowText);
+    }
+
+    // Flèche droite
+    if (currentTutorialPage < TOTAL_TUTORIAL_PAGES) {
+        arrowText.setString("Next >");
+        sf::FloatRect textRect = arrowText.getLocalBounds();
+        arrowText.setPosition(window.getSize().x - textRect.width - 50, window.getSize().y / 2.0f);
+        window.draw(arrowText);
     }
 }
 
-void Game::selectMenuItem() {
-    switch (selectedMenuItem) {
-    case 0: // Start Game
-        gameState = GameState::Playing;
-        reset();
+void Game::drawTutorial() {
+    window.clear(BACKGROUND_COLOR);
+
+    switch (currentTutorialPage) {
+    case 1:
+        drawTutorialPage1();
         break;
-    case 1: // Load Game
-        loadGame();
-        gameState = GameState::Playing;
+    case 2:
+        drawTutorialPage2();
         break;
-    case 2: // Tutorial
-        gameState = GameState::Tutorial;
-        break;
-    case 3: // Exit
-        window.close();
-        break;
+    }
+
+    drawTutorialArrows();
+
+    sf::Text escText;
+    escText.setFont(font);
+    escText.setString("Press ESC to return to menu");
+    escText.setCharacterSize(24);
+    escText.setFillColor(sf::Color(128, 128, 128));
+
+    sf::FloatRect escRect = escText.getLocalBounds();
+    escText.setOrigin(escRect.width / 2.0f, escRect.height / 2.0f);
+    escText.setPosition(window.getSize().x / 2.0f, 900);
+
+    window.draw(escText);
+    window.display();
+}
+
+void Game::handleZoom(float delta) {
+    float newZoom = zoomLevel * delta;
+    if (newZoom >= MIN_ZOOM && newZoom <= MAX_ZOOM) {
+        zoomLevel = newZoom;
+    }
+}
+
+void Game::handlePan(const sf::Vector2f& delta) {
+    viewOffset += delta;
+}
+
+void Game::updateStats() {
+    float currentTime = fpsClock.restart().asSeconds();
+    fps = 1.0f / currentTime;
+
+    livingCells = 0;
+    for (int y = 0; y < gridSize; ++y) {
+        for (int x = 0; x < gridSize; ++x) {
+            if (grid.getCellState(x, y)) {
+                livingCells++;
+            }
+        }
     }
 }
 
 void Game::reset() {
     grid.reset();
     isRunning = false;
+    generation = 0;
+    viewOffset = sf::Vector2f(0.0f, 0.0f);
+    zoomLevel = 1.0f;
+    simulationSpeed = 1.0f;
 }
 
 void Game::saveGame() {
     std::ofstream file("gamestate.save");
     if (file.is_open()) {
+        file << gridSize << " " << gridSize << "\n";
         for (int y = 0; y < gridSize; ++y) {
             for (int x = 0; x < gridSize; ++x) {
                 file << grid.getCellState(x, y) << " ";
@@ -329,15 +416,21 @@ void Game::saveGame() {
 void Game::loadGame() {
     std::ifstream file("gamestate.save");
     if (file.is_open()) {
-        bool state;
-        for (int y = 0; y < gridSize; ++y) {
-            for (int x = 0; x < gridSize; ++x) {
-                file >> state;
-                grid.setCell(x, y, state);
+        int rows, cols;
+        file >> rows >> cols;
+        if (rows > 0 && cols > 0) {
+            gridSize = cols;
+            grid = Grid(cols, rows);
+            bool state;
+            for (int y = 0; y < rows; ++y) {
+                for (int x = 0; x < cols; ++x) {
+                    file >> state;
+                    grid.setCell(x, y, state);
+                }
             }
+            saveMessage = "Game loaded successfully!";
         }
         file.close();
-        saveMessage = "Game loaded successfully!";
         saveMessageClock.restart();
     }
     else {
@@ -346,77 +439,24 @@ void Game::loadGame() {
     }
 }
 
-void Game::drawTutorial() {
-    window.clear(BACKGROUND_COLOR);
+void Game::loadPatterns() {
+    patterns = Pattern::getPatterns();
+}
 
-    sf::Text titleText;
-    titleText.setFont(font);
-    titleText.setString("Game of Life Concept");
-    titleText.setCharacterSize(50);
-    titleText.setFillColor(MENU_SELECTED_COLOR);
-    titleText.setStyle(sf::Text::Bold);
-
-    sf::FloatRect titleRect = titleText.getLocalBounds();
-    titleText.setOrigin(titleRect.width / 2.0f, titleRect.height / 2.0f);
-    titleText.setPosition(1920 / 2.0f, 200);
-
-    sf::Text conceptText;
-    conceptText.setFont(font);
-    conceptText.setString(
-        "A cellular automaton devised by John Conway.\n"
-        "Cells live, die, or multiply based on neighbors."
-    );
-    conceptText.setCharacterSize(32);
-    conceptText.setFillColor(MENU_NORMAL_COLOR);
-
-    sf::FloatRect conceptRect = conceptText.getLocalBounds();
-    conceptText.setOrigin(conceptRect.width / 2.0f, conceptRect.height / 2.0f);
-    conceptText.setPosition(1920 / 2.0f, 300);
-
-    sf::Text controlsTitle;
-    controlsTitle.setFont(font);
-    controlsTitle.setString("Controls");
-    controlsTitle.setCharacterSize(40);
-    controlsTitle.setFillColor(MENU_SELECTED_COLOR);
-    controlsTitle.setStyle(sf::Text::Bold);
-
-    sf::FloatRect controlsTitleRect = controlsTitle.getLocalBounds();
-    controlsTitle.setOrigin(controlsTitleRect.width / 2.0f, controlsTitleRect.height / 2.0f);
-    controlsTitle.setPosition(1920 / 2.0f, 450);
-
-    sf::Text controlsText;
-    controlsText.setFont(font);
-    controlsText.setString(
-        "SPACE BAR: Pause/Simulate\n"
-        "1: Glider Pattern\n"
-        "2: Small Exploder Pattern\n"
-        "3: Spaceship Pattern\n"
-        "4: Manual Mode\n"
-        "S: Save Game\n"
-        "ESC: Back to Menu"
-    );
-    controlsText.setCharacterSize(32);
-    controlsText.setFillColor(MENU_NORMAL_COLOR);
-
-    sf::FloatRect controlsRect = controlsText.getLocalBounds();
-    controlsText.setOrigin(controlsRect.width / 2.0f, controlsRect.height / 2.0f);
-    controlsText.setPosition(1920 / 2.0f, 650);
-
-    window.draw(titleText);
-    window.draw(conceptText);
-    window.draw(controlsTitle);
-    window.draw(controlsText);
-
-    sf::Text escText;
-    escText.setFont(font);
-    escText.setString("Press ESC to return to menu");
-    escText.setCharacterSize(24);
-    escText.setFillColor(sf::Color(128, 128, 128));
-
-    sf::FloatRect escRect = escText.getLocalBounds();
-    escText.setOrigin(escRect.width / 2.0f, escRect.height / 2.0f);
-    escText.setPosition(1920 / 2.0f, 900);
-
-    window.draw(escText);
-    window.display();
+void Game::processMenuSelection() {
+    switch (menu.getSelectedItem()) {
+    case 0: // Start Game
+        gameState = GameState::GridSelection;
+        break;
+    case 1: // Load Game
+        loadGame();
+        gameState = GameState::Playing;
+        break;
+    case 2: // Tutorial
+        gameState = GameState::Tutorial;
+        break;
+    case 3: // Exit
+        window.close();
+        break;
+    }
 }
