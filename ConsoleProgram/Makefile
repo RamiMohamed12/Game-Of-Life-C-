@@ -7,7 +7,7 @@ SRC_DIRS = Composants Interface Service
 # Extensions et variables
 CXX = g++
 CXXFLAGS = -Wall -std=c++17 -IComposants -IService -IInterface
-LDFLAGS = -lstdc++fs  
+LDFLAGS = -lstdc++fs
 
 # Recherche automatique des fichiers source
 SRC = $(wildcard $(addsuffix /*.cpp, $(SRC_DIRS)))
