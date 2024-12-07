@@ -1,17 +1,29 @@
 #include "Game.h"
+#include <SFML/Window/Keyboard.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
 #include <algorithm>
+#include <fstream>
 
 Game::Game()
     : window(sf::VideoMode::getDesktopMode(), "Game of Life", sf::Style::Fullscreen)
     , font()
     , menu(window, font)
     , grid(calculateOptimalGridSize().x, calculateOptimalGridSize().y)
+    , backgroundTexture()
+    , backgroundSprite()
+    , renderTexture()
+    , musicPlaylist()
+    , currentMusic()
+    , currentTrackIndex(0)        // First music system members
+    , musicVolume(50.0f)
+    , isMusicPlaying(false)
+    , musicInfo()
+    , musicDisplayClock()
     , gameState(GameState::Menu)
     , isRunning(false)
-    , selectedPattern("Glider")
+    , selectedPattern("Glider")   // Now after the music system members
     , manualMode(false)
     , currentTutorialPage(1)
     , zoomLevel(1.0f)
@@ -19,13 +31,16 @@ Game::Game()
     , simulationSpeed(1.0f)
     , generation(0)
     , livingCells(0)
-    , musicVolume(50.0f)
-    , currentTrackIndex(0)
-    , fps(0.0f) 
-    , isMusicPlaying(false) {
-    
+    , fps(0.0f)
+    , clock()
+    , fpsClock()
+    , saveMessage()
+    , saveMessageClock()
+    , patterns()
+    , lastMousePos()
+{
     window.setFramerateLimit(60);
-
+    
     if (!font.loadFromFile("/home/ramimohamed/.local/share/fonts/Ubuntu-M.ttf")) {
         std::cerr << "Error loading font!" << std::endl;
         throw std::runtime_error("Failed to load font");
@@ -41,6 +56,7 @@ Game::Game()
     musicInfo.setCharacterSize(20);
     musicInfo.setFillColor(MENU_NORMAL_COLOR);
 }
+
 
 void Game::initBackground() {
     if (!renderTexture.create(window.getSize().x, window.getSize().y)) {
@@ -90,113 +106,134 @@ void Game::run() {
         }
     }
 }
+
 void Game::handleEvents() {
     sf::Event event;
     while (window.pollEvent(event)) {
         if (event.type == sf::Event::Closed)
             window.close();
 
-        // Contrôles de musique globaux
+        // Global music controls
         if (event.type == sf::Event::KeyPressed) {
-            if (event.key.code == sf::Keyboard::M) {
-                toggleMusic();
-            }
-            else if (event.key.code == sf::Keyboard::N) {
-                playNextTrack();
-            }
-            else if (event.key.code == sf::Keyboard::P) {
-                playPreviousTrack();
-            }
-            else if (event.key.code == sf::Keyboard::PageUp) {
-                updateMusicVolume(5.0f);
-            }
-            else if (event.key.code == sf::Keyboard::PageDown) {
-                updateMusicVolume(-5.0f);
-            }
-        }
-
-        if (gameState == GameState::Menu) {
-            menu.handleEvents(event);
-        }
-        else if (gameState == GameState::Tutorial) {
-            if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::Escape) {
-                    gameState = GameState::Menu;
-                }
-                else if (event.key.code == sf::Keyboard::Tab) {
-                    currentTutorialPage = (currentTutorialPage % TOTAL_TUTORIAL_PAGES) + 1;
-                }
-            }
-        }
-        else if (gameState == GameState::Playing) {
-            if (event.type == sf::Event::KeyPressed) {
-                switch (event.key.code) {
-                case sf::Keyboard::Escape:
-                    gameState = GameState::Menu;
+            switch (event.key.code) {
+                case sf::Keyboard::M:
+                    toggleMusic();
                     break;
-                case sf::Keyboard::Space:
-                    isRunning = !isRunning;
+                case sf::Keyboard::N:
+                    playNextTrack();
                     break;
-                case sf::Keyboard::S:
-                    saveGame();
+                case sf::Keyboard::P:
+                    playPreviousTrack();
                     break;
-                case sf::Keyboard::R:
-                    reset();
+                case sf::Keyboard::PageUp:
+                    updateMusicVolume(5.0f);
                     break;
-                case sf::Keyboard::Add:
-                case sf::Keyboard::Equal:
-                    simulationSpeed = std::min(simulationSpeed * 1.1f, MAX_SPEED);
-                    break;
-                case sf::Keyboard::Subtract:
-                case sf::Keyboard::Dash:
-                    simulationSpeed = std::max(simulationSpeed * 0.9f, MIN_SPEED);
-                    break;
-                case sf::Keyboard::Z:
-                    handleZoom(1.1f);
-                    break;
-                case sf::Keyboard::X:
-                    handleZoom(0.9f);
+                case sf::Keyboard::PageDown:
+                    updateMusicVolume(-5.0f);
                     break;
                 default:
                     break;
-                }
+            }
+        }
 
-                // Pattern selection
-                if (event.key.code >= sf::Keyboard::Num1 && event.key.code <= sf::Keyboard::Num4) {
-                    int patternNum = event.key.code - sf::Keyboard::Num1;
-                    std::vector<std::string> patternNames = { "Glider", "Small Exploder", "Spaceship", "Pulsar" };
-                    if (patternNum < patternNames.size()) {
-                        selectedPattern = patternNames[patternNum];
-                        manualMode = false;
+        // State-specific controls
+        switch (gameState) {
+            case GameState::Menu:
+                menu.handleEvents(event);
+                break;
+
+            case GameState::Tutorial:
+                if (event.type == sf::Event::KeyPressed) {
+                    switch (event.key.code) {
+                        case sf::Keyboard::Escape:
+                            gameState = GameState::Menu;
+                            break;
+                        case sf::Keyboard::Tab:
+                            currentTutorialPage = (currentTutorialPage % TOTAL_TUTORIAL_PAGES) + 1;
+                            break;
+                        default:
+                            break;
                     }
                 }
-                else if (event.key.code == sf::Keyboard::Num5) {
-                    manualMode = true;
-                }
-            }
+                break;
 
-            // Mouse input for cell placement
-            if (event.type == sf::Event::MouseButtonPressed) {
-                if (event.mouseButton.button == sf::Mouse::Left) {
-                    sf::Vector2f worldPos = window.mapPixelToCoords(
-                        sf::Vector2i(event.mouseButton.x, event.mouseButton.y)
-                    );
-                    int x = static_cast<int>(worldPos.x / CELL_SIZE);
-                    int y = static_cast<int>(worldPos.y / CELL_SIZE);
-
-                    if (x >= 0 && x < grid.getWidth() && y >= 0 && y < grid.getHeight()) {
-                        if (manualMode) {
-                            grid.setCell(x, y, !grid.getCellState(x, y));
-                        }
-                        else {
-                            Pattern::insertPattern(grid, patterns[selectedPattern], x, y);
-                        }
+            case GameState::Playing:
+                if (event.type == sf::Event::KeyPressed) {
+                    switch (event.key.code) {
+                        case sf::Keyboard::Escape:
+                            gameState = GameState::Menu;
+                            break;
+                        case sf::Keyboard::Space:
+                            isRunning = !isRunning;
+                            break;
+                        case sf::Keyboard::S:
+                            saveGame();
+                            break;
+                        case sf::Keyboard::R:
+                            grid.reset();
+                            generation = 0;
+                            break;
+                        case sf::Keyboard::Z:
+                            handleZoom(1.0f);
+                            break;
+                        case sf::Keyboard::X:
+                            handleZoom(-1.0f);
+                            break;
+                        case sf::Keyboard::Left:
+                            handlePan(sf::Vector2f(-20.0f, 0.0f));
+                            break;
+                        case sf::Keyboard::Right:
+                            handlePan(sf::Vector2f(20.0f, 0.0f));
+                            break;
+                        case sf::Keyboard::Up:
+                            handlePan(sf::Vector2f(0.0f, -20.0f));
+                            break;
+                        case sf::Keyboard::Down:
+                            handlePan(sf::Vector2f(0.0f, 20.0f));
+                            break;
+                        case sf::Keyboard::Add:
+                        case sf::Keyboard::Equal:
+                            simulationSpeed = clamp(simulationSpeed + 0.1f, MIN_SPEED, MAX_SPEED);
+                            break;
+                        case sf::Keyboard::Subtract:
+                        case sf::Keyboard::Dash:
+                            simulationSpeed = clamp(simulationSpeed - 0.1f, MIN_SPEED, MAX_SPEED);
+                            break;
+                        case sf::Keyboard::Num1:
+                        case sf::Keyboard::Num2:
+                        case sf::Keyboard::Num3:
+                        case sf::Keyboard::Num4:
+                            {
+                                const std::vector<std::string> patternNames = {
+                                    "Glider", "Small Exploder", "Spaceship", "Pulsar"
+                                };
+                                size_t index = static_cast<size_t>(event.key.code - sf::Keyboard::Num1);
+                                if (index < patternNames.size()) {
+                                    selectedPattern = patternNames[index];
+                                    manualMode = false;
+                                }
+                            }
+                            break;
+                        case sf::Keyboard::Num5:
+                            manualMode = true;
+                            break;
+                        case sf::Keyboard::Num6:
+                            loadCustomPattern();
+                            break;
+                        default:
+                            break;
                     }
                 }
-            }
+
+                // Mouse controls (including zoom and pan) only active during gameplay
+                handleMouseEvents(event);
+                break;
         }
     }
 }
+
+
+
 void Game::update() {
     if (isRunning && clock.getElapsedTime().asMilliseconds() > 100 / simulationSpeed) {
         grid.updateGrid();
@@ -435,18 +472,20 @@ void Game::drawTutorialPage3() {
         window.draw(ruleText);
     }
 }
+
 void Game::drawTutorialPage4() {
     sf::Text patternsText;
     patternsText.setFont(font);
     patternsText.setCharacterSize(TUTORIAL_TEXT_SIZE);
     patternsText.setFillColor(MENU_NORMAL_COLOR);
     patternsText.setString(
-        "Available Patterns (Press 1-4 to select):\n\n"
+        "Available Patterns (Press 1-6 to select):\n\n"
         "1. Glider - A simple moving pattern\n"
         "2. Small Exploder - Creates interesting chaos\n"
         "3. Spaceship - Another moving pattern\n"
-        "4. Pulsar - A complex oscillating pattern\n\n"
-        "5. Manual Mode - Place cells individually"
+        "4. Pulsar - A complex oscillating pattern\n"
+        "5. Manual Mode - Place cells individually\n"
+        "6. Custom Pattern - Load from custom_pattern.txt"
     );
 
     sf::FloatRect textRect = patternsText.getLocalBounds();
@@ -455,6 +494,7 @@ void Game::drawTutorialPage4() {
 
     window.draw(patternsText);
 }
+
 
 void Game::drawTutorialPage5() {
     sf::Text advancedText;
@@ -649,11 +689,35 @@ void Game::processMenuSelection() {
 
 
 void Game::handleZoom(float delta) {
-    float newZoom = zoomLevel * delta;
+    // Calculate new zoom level
+    float zoomFactor = (delta > 0) ? 1.1f : 0.9f;
+    float newZoom = zoomLevel * zoomFactor;
+    
+    // Clamp zoom level between MIN_ZOOM and MAX_ZOOM
     if (newZoom >= MIN_ZOOM && newZoom <= MAX_ZOOM) {
+        // Get current mouse position
+        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+        sf::Vector2f beforeCoord = window.mapPixelToCoords(mousePos);
+        
         zoomLevel = newZoom;
+        
+        // Apply zoom to view
+        sf::View view = window.getDefaultView();
+        view.zoom(1.0f / zoomLevel);
+        view.move(viewOffset);
+        window.setView(view);
+        
+        // Get new world coordinate of mouse
+        sf::Vector2f afterCoord = window.mapPixelToCoords(mousePos);
+        
+        // Adjust view offset to zoom towards mouse position
+        viewOffset += beforeCoord - afterCoord;
     }
 }
+
+
+
+
 void Game::loadPatterns() {
     patterns = Pattern::getPatterns();  // Utilise votre classe Pattern existante
 }
@@ -682,4 +746,121 @@ void Game::loadGame() {
         saveMessage = "No saved game found!";
         saveMessageClock.restart();
     }
+}
+
+
+void Game::loadCustomPattern() {
+    std::string filename = "custom_pattern.txt";
+    std::ifstream file(filename);
+    
+    if (!file.is_open()) {
+        saveMessage = "Failed to open custom pattern file!";
+        saveMessageClock.restart();
+        return;
+    }
+    
+    int height, width;
+    if (!(file >> height >> width)) {
+        saveMessage = "Invalid custom pattern format!";
+        saveMessageClock.restart();
+        file.close();
+        return;
+    }
+    
+    if (height <= 0 || width <= 0 || height > 100 || width > 100) {
+        saveMessage = "Invalid pattern dimensions!";
+        saveMessageClock.restart();
+        file.close();
+        return;
+    }
+    
+    std::vector<std::vector<bool>> customPattern(height, std::vector<bool>(width));
+    
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            int cell;
+            if (!(file >> cell) || (cell != 0 && cell != 1)) {
+                saveMessage = "Invalid pattern data!";
+                saveMessageClock.restart();
+                file.close();
+                return;
+            }
+            customPattern[i][j] = cell == 1;
+        }
+    }
+    
+    file.close();
+    patterns["Custom"] = customPattern;
+    selectedPattern = "Custom";
+    manualMode = false;
+    
+    saveMessage = "Custom pattern loaded successfully!";
+    saveMessageClock.restart();
+}
+
+void Game::handleMouseEvents(const sf::Event& event) {
+    static bool isDragging = false;  // Add this to track if we're currently dragging
+
+    if (event.type == sf::Event::MouseButtonPressed) {
+        if (event.mouseButton.button == sf::Mouse::Left) {
+            // Left click handling for cells/patterns
+            sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+            sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
+
+            int gridX = static_cast<int>(worldPos.x / CELL_SIZE);
+            int gridY = static_cast<int>(worldPos.y / CELL_SIZE);
+
+            if (manualMode) {
+                if (gridX >= 0 && gridX < grid.getWidth() &&
+                    gridY >= 0 && gridY < grid.getHeight()) {
+                    grid.setCell(gridX, gridY, !grid.getCellState(gridX, gridY));
+                }
+            } else if (patterns.find(selectedPattern) != patterns.end()) {
+                Pattern::insertPattern(grid, patterns[selectedPattern], gridX, gridY);
+            }
+        }
+        else if (event.mouseButton.button == sf::Mouse::Right) {
+            isDragging = true;
+            lastMousePos = sf::Mouse::getPosition(window);
+        }
+    }
+
+    if (event.type == sf::Event::MouseButtonReleased) {
+        if (event.mouseButton.button == sf::Mouse::Right) {
+            isDragging = false;
+        }
+    }
+
+    if (event.type == sf::Event::MouseMoved) {
+        if (isDragging) {
+            sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
+            sf::Vector2f delta = sf::Vector2f(
+                static_cast<float>(currentMousePos.x - lastMousePos.x),
+                static_cast<float>(currentMousePos.y - lastMousePos.y)
+            );
+
+            // Invert the delta for more intuitive dragging
+            delta = -delta;
+
+            // Scale the movement based on zoom level
+            handlePan(delta);
+            lastMousePos = currentMousePos;
+        }
+    }
+
+    if (event.type == sf::Event::MouseWheelScrolled) {
+        handleZoom(event.mouseWheelScroll.delta);
+    }
+}
+
+void Game::handlePan(const sf::Vector2f& delta) {
+    // Scale the movement based on zoom level and cell size
+    float moveSpeed = 1.0f / zoomLevel;
+    viewOffset += delta * moveSpeed;
+
+    // Update the view
+    sf::View view = window.getDefaultView();
+    view.zoom(1.0f / zoomLevel);
+    view.move(viewOffset);
+    window.setView(view);
 }

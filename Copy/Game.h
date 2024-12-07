@@ -144,6 +144,9 @@ private:
     void handleZoom(float delta);
     void handlePan(const sf::Vector2f& delta);
     void updateStats();
+    void loadCustomPattern();
+    void handleMouseEvents(const sf::Event& event);
+    sf::Vector2i lastMousePos;
     sf::Vector2i calculateOptimalGridSize() const;
 };
 
