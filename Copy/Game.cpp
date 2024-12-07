@@ -68,19 +68,32 @@ void Game::initBackground() {
 void Game::initMusicSystem() {
     loadMusicPlaylist();
     currentMusic.setVolume(musicVolume);
-    if (!musicPlaylist.empty() && currentMusic.openFromFile(musicPlaylist[0])) {
-        currentMusic.setLoop(true);
+    
+    if (musicPlaylist.empty()) {
+        std::cerr << "No music tracks found in playlist!" << std::endl;
+        return;
     }
+
+    std::cout << "Attempting to load music from: " << musicPlaylist[currentTrackIndex] << std::endl;
+    
+    if (!currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
+        std::cerr << "Failed to load music: " << musicPlaylist[currentTrackIndex] << std::endl;
+        return;
+    }
+
+    std::cout << "Successfully loaded music file!" << std::endl;
+    currentMusic.setLoop(true);
 }
 
 void Game::loadMusicPlaylist() {
+    // Use absolute path to make sure we find the file
+    std::string basePath = "/home/ramimohamed/Game-Of-Life-C-/Copy/";
     musicPlaylist = {
-        "assets/music/track1.ogg",
-        "assets/music/track2.ogg",
-        "assets/music/track3.ogg"
+        basePath + "assets/music/output.ogg",
+	basePath + "assets/music/output2.ogg"
     };
+    std::cout << "Music file path: " << musicPlaylist[0] << std::endl;
 }
-
 void Game::run() {
     while (window.isOpen()) {
         handleEvents();
@@ -117,14 +130,22 @@ void Game::handleEvents() {
         if (event.type == sf::Event::KeyPressed) {
             switch (event.key.code) {
                 case sf::Keyboard::M:
-                    toggleMusic();
-                    break;
+                    if (!isMusicPlaying) { 
+                        currentMusic.play();
+                        isMusicPlaying = true;
+                        saveMessage = "Music Started";
+                    }			
+		    break;
                 case sf::Keyboard::N:
                     playNextTrack();
                     break;
                 case sf::Keyboard::P:
-                    playPreviousTrack();
-                    break;
+                    if (isMusicPlaying) {   // Only pause if music is playing
+                        currentMusic.pause();
+                        isMusicPlaying = false;
+                        saveMessage = "Music Paused";
+                    }		    
+		    break;
                 case sf::Keyboard::PageUp:
                     updateMusicVolume(5.0f);
                     break;
@@ -567,13 +588,13 @@ void Game::updateMusicInfo() {
 }
 
 void Game::drawMusicInfo() {
-    if (musicDisplayClock.getElapsedTime() < MUSIC_INFO_DISPLAY_TIME) {
-        sf::FloatRect textRect = musicInfo.getLocalBounds();
-        musicInfo.setOrigin(textRect.width / 2.0f, textRect.height / 2.0f);
-        musicInfo.setPosition(window.getSize().x / 2.0f, window.getSize().y * 0.05f);
+    if (saveMessageClock.getElapsedTime() < SAVE_MESSAGE_DURATION) {
+        musicInfo.setString(saveMessage);
+        musicInfo.setPosition(10, window.getSize().y - 40);
         window.draw(musicInfo);
     }
 }
+
 
 void Game::playNextTrack() {
     if (musicPlaylist.empty()) return;
@@ -597,23 +618,32 @@ void Game::playPreviousTrack() {
     }
 }
 
+
 void Game::toggleMusic() {
     if (isMusicPlaying) {
         currentMusic.pause();
         isMusicPlaying = false;
-    }
-    else {
+        saveMessage = "Music Paused";
+        std::cout << "Music paused" << std::endl;
+    } else {
+        // If music was never started or has stopped, start from beginning
+        if (currentMusic.getStatus() == sf::Music::Status::Stopped) {
+            if (!currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
+                std::cerr << "Failed to load music file!" << std::endl;
+                return;
+            }
+            currentMusic.setVolume(musicVolume);
+        }
+        // Otherwise, just resume from where it was paused
         currentMusic.play();
         isMusicPlaying = true;
+        saveMessage = "Music Playing";
+        std::cout << "Music playing" << std::endl;
     }
+    saveMessageClock.restart();
     musicDisplayClock.restart();
 }
 
-void Game::updateMusicVolume(float delta) {
-    musicVolume = clamp(musicVolume + delta, 0.0f, 100.0f);
-    currentMusic.setVolume(musicVolume);
-    musicDisplayClock.restart();
-}
 
 sf::Vector2i Game::calculateOptimalGridSize() const {
     const int targetCellSize = 15;
@@ -750,14 +780,34 @@ void Game::loadGame() {
 
 
 void Game::loadCustomPattern() {
-    std::string filename = "custom_pattern.txt";
-    std::ifstream file(filename);
+    // Try multiple possible locations for the file
+    std::vector<std::string> possiblePaths = {
+        "custom_pattern.txt",                    // Current directory
+        "../custom_pattern.txt",                 // Parent directory
+        "./custom_pattern.txt",                  // Explicit current directory
+        "../Copy/custom_pattern.txt"             // Your specific directory
+    };
+
+    std::ifstream file;
+    std::string usedPath;
+
+    // Try each path until we find the file
+    for (const auto& path : possiblePaths) {
+        file.open(path);
+        if (file.is_open()) {
+            usedPath = path;
+            break;
+        }
+    }
     
     if (!file.is_open()) {
-        saveMessage = "Failed to open custom pattern file!";
+        saveMessage = "Failed to open custom pattern file! Tried: " + possiblePaths[0];
         saveMessageClock.restart();
         return;
     }
+    
+    // Debug output
+    std::cout << "Successfully opened pattern file at: " << usedPath << std::endl;
     
     int height, width;
     if (!(file >> height >> width)) {
@@ -766,6 +816,8 @@ void Game::loadCustomPattern() {
         file.close();
         return;
     }
+    
+    std::cout << "Pattern dimensions: " << width << "x" << height << std::endl;
     
     if (height <= 0 || width <= 0 || height > 100 || width > 100) {
         saveMessage = "Invalid pattern dimensions!";
@@ -779,8 +831,14 @@ void Game::loadCustomPattern() {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             int cell;
-            if (!(file >> cell) || (cell != 0 && cell != 1)) {
-                saveMessage = "Invalid pattern data!";
+            if (!(file >> cell)) {
+                saveMessage = "Failed to read cell at position (" + std::to_string(i) + "," + std::to_string(j) + ")";
+                saveMessageClock.restart();
+                file.close();
+                return;
+            }
+            if (cell != 0 && cell != 1) {
+                saveMessage = "Invalid cell value at (" + std::to_string(i) + "," + std::to_string(j) + "): " + std::to_string(cell);
                 saveMessageClock.restart();
                 file.close();
                 return;
@@ -797,6 +855,8 @@ void Game::loadCustomPattern() {
     saveMessage = "Custom pattern loaded successfully!";
     saveMessageClock.restart();
 }
+
+
 
 void Game::handleMouseEvents(const sf::Event& event) {
     static bool isDragging = false;  // Add this to track if we're currently dragging
@@ -863,4 +923,12 @@ void Game::handlePan(const sf::Vector2f& delta) {
     view.zoom(1.0f / zoomLevel);
     view.move(viewOffset);
     window.setView(view);
+}
+
+void Game::updateMusicVolume(float delta) {
+    musicVolume = clamp(musicVolume + delta, 0.0f, 100.0f);
+    currentMusic.setVolume(musicVolume);
+    saveMessage = "Volume: " + std::to_string(static_cast<int>(musicVolume)) + "%";
+    saveMessageClock.restart();
+    musicDisplayClock.restart();
 }
