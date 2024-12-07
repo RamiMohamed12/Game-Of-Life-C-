@@ -16,7 +16,8 @@
 enum class GameState {
     Menu,
     Playing,
-    Tutorial
+    Tutorial,
+    MusicSettings
 };
 
 class Game {
@@ -148,6 +149,13 @@ private:
     void handleMouseEvents(const sf::Event& event);
     sf::Vector2i lastMousePos;
     sf::Vector2i calculateOptimalGridSize() const;
+
+    void drawMusicSettings();
+    void handleMusicSettingsEvents(const sf::Event& event);
+    
+    // Additional member variables
+    size_t selectedMusicTrack;
+    std::vector<std::string> musicTrackNames;  // Friendly names for display
 };
 
 #endif

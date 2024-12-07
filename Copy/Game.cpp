@@ -5,6 +5,8 @@
 #include <cmath>
 #include <algorithm>
 #include <fstream>
+#include <cstdlib>  
+#include <ctime>    
 
 Game::Game()
     : window(sf::VideoMode::getDesktopMode(), "Game of Life", sf::Style::Fullscreen)
@@ -67,24 +69,24 @@ void Game::initBackground() {
 
 void Game::initMusicSystem() {
     loadMusicPlaylist();
+    
+    // Set initial volume
     currentMusic.setVolume(musicVolume);
     
-    if (musicPlaylist.empty()) {
-        std::cerr << "No music tracks found in playlist!" << std::endl;
-        return;
-    }
-
-    std::cout << "Attempting to load music from: " << musicPlaylist[currentTrackIndex] << std::endl;
+    // Initialize random seed
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
     
-    if (!currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
-        std::cerr << "Failed to load music: " << musicPlaylist[currentTrackIndex] << std::endl;
-        return;
+    // Select random track
+    if (!musicPlaylist.empty()) {
+        currentTrackIndex = std::rand() % musicPlaylist.size();
+        if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
+            currentMusic.setLoop(true);
+            currentMusic.play();
+            isMusicPlaying = true;
+            musicDisplayClock.restart();
+        }
     }
-
-    std::cout << "Successfully loaded music file!" << std::endl;
-    currentMusic.setLoop(true);
 }
-
 void Game::loadMusicPlaylist() {
     // Use absolute path to make sure we find the file
     std::string basePath = "/home/ramimohamed/Game-Of-Life-C-/Copy/";
@@ -92,30 +94,41 @@ void Game::loadMusicPlaylist() {
         basePath + "assets/music/output.ogg",
 	basePath + "assets/music/output2.ogg"
     };
-    std::cout << "Music file path: " << musicPlaylist[0] << std::endl;
+    musicTrackNames = {
+        "Track 1 - Walk Away",
+        "Track 2 - DUALSHOCK"
+    };
+
+
 }
+
 void Game::run() {
     while (window.isOpen()) {
         handleEvents();
         updateBackground();
         updateMusicInfo();
 
-        if (gameState == GameState::Menu) {
-            menu.draw();
-            drawMusicInfo();
-            if (menu.isItemSelected()) {
-                processMenuSelection();
-                menu.resetSelection();
-            }
-        }
-        else if (gameState == GameState::Tutorial) {
-            drawTutorial();
-            drawMusicInfo();
-        }
-        else if (gameState == GameState::Playing) {
-            update();
-            draw();
-            drawMusicInfo();
+        switch (gameState) {
+            case GameState::Menu:
+                menu.draw();
+                drawMusicInfo();
+                if (menu.isItemSelected()) {
+                    processMenuSelection();
+                    menu.resetSelection();
+                }
+                break;
+            case GameState::MusicSettings:
+                drawMusicSettings();
+                break;
+            case GameState::Tutorial:
+                drawTutorial();
+                drawMusicInfo();
+                break;
+            case GameState::Playing:
+                update();
+                draw();
+                drawMusicInfo();
+                break;
         }
     }
 }
@@ -130,22 +143,14 @@ void Game::handleEvents() {
         if (event.type == sf::Event::KeyPressed) {
             switch (event.key.code) {
                 case sf::Keyboard::M:
-                    if (!isMusicPlaying) { 
-                        currentMusic.play();
-                        isMusicPlaying = true;
-                        saveMessage = "Music Started";
-                    }			
-		    break;
+                    toggleMusic();
+                    break;
                 case sf::Keyboard::N:
                     playNextTrack();
                     break;
                 case sf::Keyboard::P:
-                    if (isMusicPlaying) {   // Only pause if music is playing
-                        currentMusic.pause();
-                        isMusicPlaying = false;
-                        saveMessage = "Music Paused";
-                    }		    
-		    break;
+                    playPreviousTrack();
+                    break;
                 case sf::Keyboard::PageUp:
                     updateMusicVolume(5.0f);
                     break;
@@ -161,6 +166,10 @@ void Game::handleEvents() {
         switch (gameState) {
             case GameState::Menu:
                 menu.handleEvents(event);
+                break;
+
+            case GameState::MusicSettings:
+                handleMusicSettingsEvents(event);
                 break;
 
             case GameState::Tutorial:
@@ -194,24 +203,6 @@ void Game::handleEvents() {
                             grid.reset();
                             generation = 0;
                             break;
-                        case sf::Keyboard::Z:
-                            handleZoom(1.0f);
-                            break;
-                        case sf::Keyboard::X:
-                            handleZoom(-1.0f);
-                            break;
-                        case sf::Keyboard::Left:
-                            handlePan(sf::Vector2f(-20.0f, 0.0f));
-                            break;
-                        case sf::Keyboard::Right:
-                            handlePan(sf::Vector2f(20.0f, 0.0f));
-                            break;
-                        case sf::Keyboard::Up:
-                            handlePan(sf::Vector2f(0.0f, -20.0f));
-                            break;
-                        case sf::Keyboard::Down:
-                            handlePan(sf::Vector2f(0.0f, 20.0f));
-                            break;
                         case sf::Keyboard::Add:
                         case sf::Keyboard::Equal:
                             simulationSpeed = clamp(simulationSpeed + 0.1f, MIN_SPEED, MAX_SPEED);
@@ -225,11 +216,9 @@ void Game::handleEvents() {
                         case sf::Keyboard::Num3:
                         case sf::Keyboard::Num4:
                             {
-                                const std::vector<std::string> patternNames = {
-                                    "Glider", "Small Exploder", "Spaceship", "Pulsar"
-                                };
-                                size_t index = static_cast<size_t>(event.key.code - sf::Keyboard::Num1);
-                                if (index < patternNames.size()) {
+                                int index = event.key.code - sf::Keyboard::Num1;
+                                std::vector<std::string> patternNames = {"Glider", "Small Exploder", "Spaceship", "Pulsar"};
+                                if (index >= 0 && index < static_cast<int>(patternNames.size())) {
                                     selectedPattern = patternNames[index];
                                     manualMode = false;
                                 }
@@ -246,13 +235,46 @@ void Game::handleEvents() {
                     }
                 }
 
-                // Mouse controls (including zoom and pan) only active during gameplay
-                handleMouseEvents(event);
+                // Mouse controls for Playing state
+                if (event.type == sf::Event::MouseButtonPressed) {
+                    if (event.mouseButton.button == sf::Mouse::Left) {
+                        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                        sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
+                        
+                        int gridX = static_cast<int>(worldPos.x / CELL_SIZE);
+                        int gridY = static_cast<int>(worldPos.y / CELL_SIZE);
+
+                        if (manualMode) {
+                            if (gridX >= 0 && gridX < grid.getWidth() && 
+                                gridY >= 0 && gridY < grid.getHeight()) {
+                                grid.setCell(gridX, gridY, !grid.getCellState(gridX, gridY));
+                            }
+                        } else if (patterns.find(selectedPattern) != patterns.end()) {
+                            Pattern::insertPattern(grid, patterns[selectedPattern], gridX, gridY);
+                        }
+                    }
+                }
+
+                // Zoom and pan controls
+                if (event.type == sf::Event::MouseWheelScrolled) {
+                    handleZoom(event.mouseWheelScroll.delta);
+                }
+
+                if (event.type == sf::Event::MouseMoved) {
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
+                        sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
+                        sf::Vector2f delta = sf::Vector2f(
+                            static_cast<float>(lastMousePos.x - currentMousePos.x),
+                            static_cast<float>(lastMousePos.y - currentMousePos.y)
+                        );
+                        handlePan(delta);
+                    }
+                    lastMousePos = sf::Mouse::getPosition(window);
+                }
                 break;
         }
     }
 }
-
 
 
 void Game::update() {
@@ -695,28 +717,54 @@ void Game::reset() {
     simulationSpeed = 1.0f;
 }
 
-
 void Game::processMenuSelection() {
     switch (menu.getSelectedItem()) {
-    case 0: // Start Game
-        reset();  // Reset the game state before starting
-        grid = Grid(calculateOptimalGridSize().x, calculateOptimalGridSize().y);  // Create a new grid
-        gameState = GameState::Playing;
-        break;
-    case 1: // Load Game
-        loadGame();
-        gameState = GameState::Playing;
-        break;
-    case 2: // Tutorial
-        gameState = GameState::Tutorial;
-        currentTutorialPage = 1;
-        break;
-    case 3: // Exit
-        window.close();
-        break;
+        case 0: // Start Game
+            reset();
+            grid = Grid(calculateOptimalGridSize().x, calculateOptimalGridSize().y);
+            // Only start music if it's not already playing
+            if (!isMusicPlaying && !musicPlaylist.empty()) {
+                currentTrackIndex = std::rand() % musicPlaylist.size();
+                if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
+                    currentMusic.setVolume(musicVolume);
+                    currentMusic.play();
+                    isMusicPlaying = true;
+                    musicDisplayClock.restart();
+                }
+            }
+            gameState = GameState::Playing;
+            break;
+            
+        case 1: // Load Game
+            loadGame();
+            // Only start music if it's not already playing
+            if (!isMusicPlaying && !musicPlaylist.empty()) {
+                currentTrackIndex = std::rand() % musicPlaylist.size();
+                if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
+                    currentMusic.setVolume(musicVolume);
+                    currentMusic.play();
+                    isMusicPlaying = true;
+                    musicDisplayClock.restart();
+                }
+            }
+            gameState = GameState::Playing;
+            break;
+            
+        case 2: // Tutorial
+            gameState = GameState::Tutorial;
+            currentTutorialPage = 1;
+            break;
+            
+        case 3: // Music Settings
+            gameState = GameState::MusicSettings;
+            selectedMusicTrack = currentTrackIndex;
+            break;
+            
+        case 4: // Exit
+            window.close();
+            break;
     }
 }
-
 
 void Game::handleZoom(float delta) {
     // Calculate new zoom level
@@ -931,4 +979,153 @@ void Game::updateMusicVolume(float delta) {
     saveMessage = "Volume: " + std::to_string(static_cast<int>(musicVolume)) + "%";
     saveMessageClock.restart();
     musicDisplayClock.restart();
+}
+
+void Game::drawMusicSettings() {
+    window.clear(BACKGROUND_COLOR);
+    window.draw(backgroundSprite);
+
+    // Draw title
+    sf::Text title;
+    title.setFont(font);
+    title.setString("Music Settings");
+    title.setCharacterSize(48);
+    title.setFillColor(MENU_SELECTED_COLOR);
+    title.setStyle(sf::Text::Bold);
+
+    // Center the title
+    float titleX = (window.getSize().x - title.getGlobalBounds().width) / 2;
+    title.setPosition(titleX, 50);
+    window.draw(title);
+
+    // Draw volume control
+    sf::Text volumeText;
+    volumeText.setFont(font);
+    volumeText.setString("Volume: " + std::to_string(static_cast<int>(musicVolume)) + "%");
+    volumeText.setCharacterSize(24);
+    volumeText.setFillColor(MENU_NORMAL_COLOR);
+    volumeText.setPosition(window.getSize().x * 0.3f, 150);
+    window.draw(volumeText);
+
+    // Volume bar
+    sf::RectangleShape volumeBar;
+    volumeBar.setSize(sf::Vector2f(400, 20));
+    volumeBar.setPosition(window.getSize().x * 0.3f, 190);
+    volumeBar.setFillColor(sf::Color(MENU_NORMAL_COLOR.r, MENU_NORMAL_COLOR.g, MENU_NORMAL_COLOR.b, 50));
+    window.draw(volumeBar);
+
+    // Volume level
+    sf::RectangleShape volumeLevel;
+    volumeLevel.setSize(sf::Vector2f(4 * musicVolume, 20));
+    volumeLevel.setPosition(window.getSize().x * 0.3f, 190);
+    volumeLevel.setFillColor(MENU_SELECTED_COLOR);
+    window.draw(volumeLevel);
+
+    // Draw track list
+    float startY = 250;
+    float spacing = 40;
+
+    sf::Text playlistTitle;
+    playlistTitle.setFont(font);
+    playlistTitle.setString("Available Tracks:");
+    playlistTitle.setCharacterSize(24);
+    playlistTitle.setFillColor(MENU_NORMAL_COLOR);
+    playlistTitle.setPosition(window.getSize().x * 0.3f, startY);
+    window.draw(playlistTitle);
+
+    startY += spacing + 20;
+
+    for (size_t i = 0; i < musicTrackNames.size(); i++) {
+        sf::RectangleShape trackBg;
+        trackBg.setSize(sf::Vector2f(400, 30));
+        trackBg.setPosition(window.getSize().x * 0.3f, startY + i * spacing);
+
+        // Highlight current track
+        if (i == currentTrackIndex) {
+            trackBg.setFillColor(sf::Color(MENU_SELECTED_COLOR.r,
+                                         MENU_SELECTED_COLOR.g,
+                                         MENU_SELECTED_COLOR.b, 40));
+        } else {
+            trackBg.setFillColor(sf::Color::Transparent);
+        }
+        window.draw(trackBg);
+
+        // Track name
+        sf::Text trackText;
+        trackText.setFont(font);
+        trackText.setString(musicTrackNames[i]);
+        trackText.setCharacterSize(20);
+        trackText.setFillColor(i == selectedMusicTrack ? MENU_SELECTED_COLOR : MENU_NORMAL_COLOR);
+        trackText.setPosition(window.getSize().x * 0.3f + 20, startY + i * spacing + 5);
+        window.draw(trackText);
+
+        // Playing indicator
+        if (i == currentTrackIndex && isMusicPlaying) {
+            sf::CircleShape playingIndicator(5);
+            playingIndicator.setFillColor(ACCENT_COLOR);
+            playingIndicator.setPosition(window.getSize().x * 0.3f + 380, startY + i * spacing + 10);
+            window.draw(playingIndicator);
+        }
+    }
+
+    // Draw controls help
+    std::vector<std::string> controls = {
+        "Space - Play/Pause",
+        "Up/Down - Select Track",
+        "Enter - Play Selected",
+        "Left/Right - Adjust Volume",
+        "M - Mute/Unmute",
+        "Esc - Back to Menu"
+    };
+
+    float controlsY = startY + musicTrackNames.size() * spacing + 40;
+    for (const auto& control : controls) {
+        sf::Text controlText;
+        controlText.setFont(font);
+        controlText.setString(control);
+        controlText.setCharacterSize(20);
+        controlText.setFillColor(SUBTITLE_COLOR);
+        controlText.setPosition(window.getSize().x * 0.3f, controlsY);
+        window.draw(controlText);
+        controlsY += 30;
+    }
+
+    window.display();
+}
+
+void Game::handleMusicSettingsEvents(const sf::Event& event) {
+    if (event.type == sf::Event::KeyPressed) {
+        switch (event.key.code) {
+            case sf::Keyboard::Escape:
+                gameState = GameState::Menu;
+                break;
+            case sf::Keyboard::Up:
+                if (selectedMusicTrack > 0) selectedMusicTrack--;
+                break;
+            case sf::Keyboard::Down:
+                if (selectedMusicTrack + 1 < musicTrackNames.size()) selectedMusicTrack++;
+                break;
+            case sf::Keyboard::Left:
+                updateMusicVolume(-5.0f);
+                break;
+            case sf::Keyboard::Right:
+                updateMusicVolume(5.0f);
+                break;
+            case sf::Keyboard::Space:
+                toggleMusic();
+                break;
+            case sf::Keyboard::Return:
+                if (selectedMusicTrack != currentTrackIndex) {
+                    currentTrackIndex = selectedMusicTrack;
+                    if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
+                        currentMusic.setVolume(musicVolume);
+                        currentMusic.play();
+                        isMusicPlaying = true;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
 }

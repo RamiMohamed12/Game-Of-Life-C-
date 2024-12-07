@@ -12,8 +12,9 @@ Menu::Menu(sf::RenderWindow& window, const sf::Font& font)
     , selectedMenuItem(0)
     , itemSelected(false)
     , menuItemAlpha(0) {
-    menuItems = { "Start Game", "Load Game", "Tutorial", "Exit" };
+    menuItems = { "Start Game", "Load Game", "Tutorial", "Music Settings", "Exit" };
 }
+
 
 void Menu::draw() {
     updateAnimation();
