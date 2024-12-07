@@ -42,8 +42,8 @@ Game::Game()
     , lastMousePos()
 {
     window.setFramerateLimit(60);
-    
-    if (!font.loadFromFile("/home/ramimohamed/.local/share/fonts/Ubuntu-M.ttf")) {
+
+    if (!font.loadFromFile("C:\\Users\\THINKPAD\\AppData\\Local\\Microsoft\\Windows\\Fonts\\Ubuntu-Medium.ttf")) {
         std::cerr << "Error loading font!" << std::endl;
         throw std::runtime_error("Failed to load font");
     }
@@ -69,13 +69,13 @@ void Game::initBackground() {
 
 void Game::initMusicSystem() {
     loadMusicPlaylist();
-    
+
     // Set initial volume
     currentMusic.setVolume(musicVolume);
-    
+
     // Initialize random seed
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    
+
     // Select random track
     if (!musicPlaylist.empty()) {
         currentTrackIndex = std::rand() % musicPlaylist.size();
@@ -92,7 +92,7 @@ void Game::loadMusicPlaylist() {
     std::string basePath = "/home/ramimohamed/Game-Of-Life-C-/Copy/";
     musicPlaylist = {
         basePath + "assets/music/output.ogg",
-	basePath + "assets/music/output2.ogg"
+    basePath + "assets/music/output2.ogg"
     };
     musicTrackNames = {
         "Track 1 - Walk Away",
@@ -109,26 +109,26 @@ void Game::run() {
         updateMusicInfo();
 
         switch (gameState) {
-            case GameState::Menu:
-                menu.draw();
-                drawMusicInfo();
-                if (menu.isItemSelected()) {
-                    processMenuSelection();
-                    menu.resetSelection();
-                }
-                break;
-            case GameState::MusicSettings:
-                drawMusicSettings();
-                break;
-            case GameState::Tutorial:
-                drawTutorial();
-                drawMusicInfo();
-                break;
-            case GameState::Playing:
-                update();
-                draw();
-                drawMusicInfo();
-                break;
+        case GameState::Menu:
+            menu.draw();
+            drawMusicInfo();
+            if (menu.isItemSelected()) {
+                processMenuSelection();
+                menu.resetSelection();
+            }
+            break;
+        case GameState::MusicSettings:
+            drawMusicSettings();
+            break;
+        case GameState::Tutorial:
+            drawTutorial();
+            drawMusicInfo();
+            break;
+        case GameState::Playing:
+            update();
+            draw();
+            drawMusicInfo();
+            break;
         }
     }
 }
@@ -142,136 +142,137 @@ void Game::handleEvents() {
         // Global music controls
         if (event.type == sf::Event::KeyPressed) {
             switch (event.key.code) {
-                case sf::Keyboard::M:
-                    toggleMusic();
-                    break;
-                case sf::Keyboard::N:
-                    playNextTrack();
-                    break;
-                case sf::Keyboard::P:
-                    playPreviousTrack();
-                    break;
-                case sf::Keyboard::PageUp:
-                    updateMusicVolume(5.0f);
-                    break;
-                case sf::Keyboard::PageDown:
-                    updateMusicVolume(-5.0f);
-                    break;
-                default:
-                    break;
+            case sf::Keyboard::M:
+                toggleMusic();
+                break;
+            case sf::Keyboard::N:
+                playNextTrack();
+                break;
+            case sf::Keyboard::P:
+                playPreviousTrack();
+                break;
+            case sf::Keyboard::PageUp:
+                updateMusicVolume(5.0f);
+                break;
+            case sf::Keyboard::PageDown:
+                updateMusicVolume(-5.0f);
+                break;
+            default:
+                break;
             }
         }
 
         // State-specific controls
         switch (gameState) {
-            case GameState::Menu:
-                menu.handleEvents(event);
-                break;
+        case GameState::Menu:
+            menu.handleEvents(event);
+            break;
 
-            case GameState::MusicSettings:
-                handleMusicSettingsEvents(event);
-                break;
+        case GameState::MusicSettings:
+            handleMusicSettingsEvents(event);
+            break;
 
-            case GameState::Tutorial:
-                if (event.type == sf::Event::KeyPressed) {
-                    switch (event.key.code) {
-                        case sf::Keyboard::Escape:
-                            gameState = GameState::Menu;
-                            break;
-                        case sf::Keyboard::Tab:
-                            currentTutorialPage = (currentTutorialPage % TOTAL_TUTORIAL_PAGES) + 1;
-                            break;
-                        default:
-                            break;
+        case GameState::Tutorial:
+            if (event.type == sf::Event::KeyPressed) {
+                switch (event.key.code) {
+                case sf::Keyboard::Escape:
+                    gameState = GameState::Menu;
+                    break;
+                case sf::Keyboard::Tab:
+                    currentTutorialPage = (currentTutorialPage % TOTAL_TUTORIAL_PAGES) + 1;
+                    break;
+                default:
+                    break;
+                }
+            }
+            break;
+
+        case GameState::Playing:
+            if (event.type == sf::Event::KeyPressed) {
+                switch (event.key.code) {
+                case sf::Keyboard::Escape:
+                    gameState = GameState::Menu;
+                    break;
+                case sf::Keyboard::Space:
+                    isRunning = !isRunning;
+                    break;
+                case sf::Keyboard::S:
+                    saveGame();
+                    break;
+                case sf::Keyboard::R:
+                    grid.reset();
+                    generation = 0;
+                    break;
+                case sf::Keyboard::Add:
+                case sf::Keyboard::Equal:
+                    simulationSpeed = clamp(simulationSpeed + 0.1f, MIN_SPEED, MAX_SPEED);
+                    break;
+                case sf::Keyboard::Subtract:
+                case sf::Keyboard::Dash:
+                    simulationSpeed = clamp(simulationSpeed - 0.1f, MIN_SPEED, MAX_SPEED);
+                    break;
+                case sf::Keyboard::Num1:
+                case sf::Keyboard::Num2:
+                case sf::Keyboard::Num3:
+                case sf::Keyboard::Num4:
+                {
+                    int index = event.key.code - sf::Keyboard::Num1;
+                    std::vector<std::string> patternNames = { "Glider", "Small Exploder", "Spaceship", "Pulsar" };
+                    if (index >= 0 && index < static_cast<int>(patternNames.size())) {
+                        selectedPattern = patternNames[index];
+                        manualMode = false;
                     }
                 }
                 break;
-
-            case GameState::Playing:
-                if (event.type == sf::Event::KeyPressed) {
-                    switch (event.key.code) {
-                        case sf::Keyboard::Escape:
-                            gameState = GameState::Menu;
-                            break;
-                        case sf::Keyboard::Space:
-                            isRunning = !isRunning;
-                            break;
-                        case sf::Keyboard::S:
-                            saveGame();
-                            break;
-                        case sf::Keyboard::R:
-                            grid.reset();
-                            generation = 0;
-                            break;
-                        case sf::Keyboard::Add:
-                        case sf::Keyboard::Equal:
-                            simulationSpeed = clamp(simulationSpeed + 0.1f, MIN_SPEED, MAX_SPEED);
-                            break;
-                        case sf::Keyboard::Subtract:
-                        case sf::Keyboard::Dash:
-                            simulationSpeed = clamp(simulationSpeed - 0.1f, MIN_SPEED, MAX_SPEED);
-                            break;
-                        case sf::Keyboard::Num1:
-                        case sf::Keyboard::Num2:
-                        case sf::Keyboard::Num3:
-                        case sf::Keyboard::Num4:
-                            {
-                                int index = event.key.code - sf::Keyboard::Num1;
-                                std::vector<std::string> patternNames = {"Glider", "Small Exploder", "Spaceship", "Pulsar"};
-                                if (index >= 0 && index < static_cast<int>(patternNames.size())) {
-                                    selectedPattern = patternNames[index];
-                                    manualMode = false;
-                                }
-                            }
-                            break;
-                        case sf::Keyboard::Num5:
-                            manualMode = true;
-                            break;
-                        case sf::Keyboard::Num6:
-                            loadCustomPattern();
-                            break;
-                        default:
-                            break;
-                    }
+                case sf::Keyboard::Num5:
+                    manualMode = true;
+                    break;
+                case sf::Keyboard::Num6:
+                    loadCustomPattern();
+                    break;
+                default:
+                    break;
                 }
+            }
 
-                // Mouse controls for Playing state
-                if (event.type == sf::Event::MouseButtonPressed) {
-                    if (event.mouseButton.button == sf::Mouse::Left) {
-                        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                        sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
-                        
-                        int gridX = static_cast<int>(worldPos.x / CELL_SIZE);
-                        int gridY = static_cast<int>(worldPos.y / CELL_SIZE);
+            // Mouse controls for Playing state
+            if (event.type == sf::Event::MouseButtonPressed) {
+                if (event.mouseButton.button == sf::Mouse::Left) {
+                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                    sf::Vector2f worldPos = window.mapPixelToCoords(mousePos);
 
-                        if (manualMode) {
-                            if (gridX >= 0 && gridX < grid.getWidth() && 
-                                gridY >= 0 && gridY < grid.getHeight()) {
-                                grid.setCell(gridX, gridY, !grid.getCellState(gridX, gridY));
-                            }
-                        } else if (patterns.find(selectedPattern) != patterns.end()) {
-                            Pattern::insertPattern(grid, patterns[selectedPattern], gridX, gridY);
+                    int gridX = static_cast<int>(worldPos.x / CELL_SIZE);
+                    int gridY = static_cast<int>(worldPos.y / CELL_SIZE);
+
+                    if (manualMode) {
+                        if (gridX >= 0 && gridX < grid.getWidth() &&
+                            gridY >= 0 && gridY < grid.getHeight()) {
+                            grid.setCell(gridX, gridY, !grid.getCellState(gridX, gridY));
                         }
                     }
-                }
-
-                // Zoom and pan controls
-                if (event.type == sf::Event::MouseWheelScrolled) {
-                    handleZoom(event.mouseWheelScroll.delta);
-                }
-
-                if (event.type == sf::Event::MouseMoved) {
-                    if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
-                        sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
-                        sf::Vector2f delta = sf::Vector2f(
-                            static_cast<float>(lastMousePos.x - currentMousePos.x),
-                            static_cast<float>(lastMousePos.y - currentMousePos.y)
-                        );
-                        handlePan(delta);
+                    else if (patterns.find(selectedPattern) != patterns.end()) {
+                        Pattern::insertPattern(grid, patterns[selectedPattern], gridX, gridY);
                     }
-                    lastMousePos = sf::Mouse::getPosition(window);
                 }
-                break;
+            }
+
+            // Zoom and pan controls
+            if (event.type == sf::Event::MouseWheelScrolled) {
+                handleZoom(event.mouseWheelScroll.delta);
+            }
+
+            if (event.type == sf::Event::MouseMoved) {
+                if (sf::Mouse::isButtonPressed(sf::Mouse::Right)) {
+                    sf::Vector2i currentMousePos = sf::Mouse::getPosition(window);
+                    sf::Vector2f delta = sf::Vector2f(
+                        static_cast<float>(lastMousePos.x - currentMousePos.x),
+                        static_cast<float>(lastMousePos.y - currentMousePos.y)
+                    );
+                    handlePan(delta);
+                }
+                lastMousePos = sf::Mouse::getPosition(window);
+            }
+            break;
         }
     }
 }
@@ -432,55 +433,150 @@ void Game::drawTutorialHeader() {
 }
 
 void Game::drawTutorialPage1() {
-    sf::Text introText;
-    introText.setFont(font);
-    introText.setCharacterSize(TUTORIAL_TEXT_SIZE);
-    introText.setFillColor(MENU_NORMAL_COLOR);
-    introText.setString(
-        "Conway's Game of Life is a cellular automaton\n"
-        "that simulates the evolution of cells based on\n"
-        "simple rules. Watch as patterns emerge and\n"
-        "evolve in fascinating ways!\n\n"
-        "Press TAB to navigate through the tutorial pages."
-    );
+    // Fond avec effet de dégradé
+    sf::RectangleShape gradient;
+    gradient.setSize(sf::Vector2f(window.getSize().x * 0.8f, window.getSize().y * 0.7f));
+    gradient.setPosition(window.getSize().x * 0.1f, window.getSize().y * 0.2f);
+    gradient.setFillColor(sf::Color(20, 20, 25, 230));
+    window.draw(gradient);
 
-    sf::FloatRect textRect = introText.getLocalBounds();
-    introText.setOrigin(textRect.width / 2.0f, textRect.height / 2.0f);
-    introText.setPosition(window.getSize().x / 2.0f, window.getSize().y * 0.45f);
+    // Titre animé
+    static float time = 0;
+    time += 0.016f; // Animation subtile
 
-    window.draw(introText);
+    sf::Text title;
+    title.setFont(font);
+    title.setString("Welcome to Game of Life");
+    title.setCharacterSize(48);
+    title.setFillColor(MENU_SELECTED_COLOR);
+    title.setPosition(window.getSize().x * 0.5f, window.getSize().y * 0.25f);
+    title.setOrigin(title.getLocalBounds().width / 2.0f, 0);
+    title.setOutlineColor(sf::Color(MENU_SELECTED_COLOR.r, MENU_SELECTED_COLOR.g, MENU_SELECTED_COLOR.b, 50));
+    title.setOutlineThickness(2.0f + std::sin(time * 2.0f));
+    window.draw(title);
+
+    // Sous-titre élégant
+    sf::Text subtitle;
+    subtitle.setFont(font);
+    subtitle.setString("A Universe of Endless Possibilities");
+    subtitle.setCharacterSize(24);
+    subtitle.setFillColor(ACCENT_COLOR);
+    subtitle.setPosition(window.getSize().x * 0.5f, window.getSize().y * 0.35f);
+    subtitle.setOrigin(subtitle.getLocalBounds().width / 2.0f, 0);
+    window.draw(subtitle);
+
+    // Description avec style
+    std::vector<std::string> descriptions = {
+        "Discover a fascinating world where simple rules create complex life.",
+        "Watch cells evolve and interact in mesmerizing patterns.",
+        "Create, experiment, and explore endless possibilities.",
+        "Learn about emergence and mathematical beauty."
+    };
+
+    float startY = window.getSize().y * 0.45f;
+    for (const auto& desc : descriptions) {
+        sf::Text descText;
+        descText.setFont(font);
+        descText.setString("• " + desc);
+        descText.setCharacterSize(22);
+        descText.setFillColor(MENU_NORMAL_COLOR);
+        descText.setPosition(window.getSize().x * 0.2f, startY);
+        window.draw(descText);
+        startY += 40;
+    }
+
+    // Indication de navigation animée
+    sf::Text navText;
+    navText.setFont(font);
+    navText.setString("Press TAB to continue");
+    navText.setCharacterSize(24);
+    navText.setFillColor(sf::Color(MENU_SELECTED_COLOR.r, MENU_SELECTED_COLOR.g, MENU_SELECTED_COLOR.b,
+        128 + static_cast<int>(127 * std::sin(time * 3.0f))));
+    navText.setPosition(window.getSize().x * 0.5f, window.getSize().y * 0.8f);
+    navText.setOrigin(navText.getLocalBounds().width / 2.0f, 0);
+    window.draw(navText);
 }
 
 void Game::drawTutorialPage2() {
-    std::vector<std::pair<std::string, std::string>> controls = {
-        {"SPACE", "Play/Pause Simulation"},
-        {"R", "Reset Grid"},
-        {"ESC", "Return to Menu"},
-        {"1-4", "Select Patterns"},
-        {"5", "Manual Cell Mode"},
-        {"M", "Toggle Music"},
-        {"N/P", "Next/Previous Track"},
-        {"Page Up/Down", "Adjust Volume"},
-        {"Z/X", "Zoom In/Out"},
-        {"Arrows", "Pan View"}
+    // Fond principal
+    sf::RectangleShape background;
+    background.setSize(sf::Vector2f(window.getSize().x * 0.8f, window.getSize().y * 0.7f));
+    background.setPosition(window.getSize().x * 0.1f, window.getSize().y * 0.2f);
+    background.setFillColor(sf::Color(20, 20, 25, 230));
+    window.draw(background);
+
+    // Titre de la section
+    sf::Text title;
+    title.setFont(font);
+    title.setString("Game Controls");
+    title.setCharacterSize(36);
+    title.setFillColor(MENU_SELECTED_COLOR);
+    title.setPosition(window.getSize().x * 0.5f, window.getSize().y * 0.25f);
+    title.setOrigin(title.getLocalBounds().width / 2.0f, 0);
+    window.draw(title);
+
+    // Structure des contrôles
+    struct Control {
+        std::string key;
+        std::string description;
+        bool isMainControl;
+    };
+
+    std::vector<Control> controls = {
+        {"SPACE", "Play or Pause the simulation", true},
+        {"R", "Reset the entire grid", true},
+        {"ESC", "Return to main menu", true},
+        {"1-4", "Select predefined patterns", false},
+        {"5", "Enable manual cell placement", false},
+        {"Mouse Wheel", "Zoom in/out", false},
+        {"Right Click + Drag", "Pan the view", false},
+        {"Left Click", "Place cells/patterns", true},
+        {"M", "Toggle music", false},
+        {"N/P", "Next/Previous track", false}
     };
 
     float startY = window.getSize().y * 0.35f;
-    float spacing = 45.0f;
+    float spacing = 35.0f;
 
-    for (size_t i = 0; i < controls.size(); i++) {
-        sf::Text controlText;
-        controlText.setFont(font);
-        controlText.setString(controls[i].first + " - " + controls[i].second);
-        controlText.setCharacterSize(TUTORIAL_TEXT_SIZE);
-        controlText.setFillColor(MENU_NORMAL_COLOR);
+    for (const auto& control : controls) {
+        // Conteneur du contrôle
+        sf::RectangleShape controlBox;
+        controlBox.setSize(sf::Vector2f(window.getSize().x * 0.6f, 30.0f));
+        controlBox.setPosition(window.getSize().x * 0.2f, startY);
+        controlBox.setFillColor(sf::Color(MENU_SELECTED_COLOR.r, MENU_SELECTED_COLOR.g, MENU_SELECTED_COLOR.b,
+            control.isMainControl ? 40 : 20));
+        window.draw(controlBox);
 
-        sf::FloatRect textRect = controlText.getLocalBounds();
-        controlText.setOrigin(textRect.width / 2.0f, 0);
-        controlText.setPosition(window.getSize().x / 2.0f, startY + i * spacing);
+        // Touche
+        sf::Text keyText;
+        keyText.setFont(font);
+        keyText.setString(control.key);
+        keyText.setCharacterSize(22);
+        keyText.setFillColor(control.isMainControl ? MENU_SELECTED_COLOR : ACCENT_COLOR);
+        keyText.setPosition(window.getSize().x * 0.22f, startY + 5);
+        window.draw(keyText);
 
-        window.draw(controlText);
+        // Description
+        sf::Text descText;
+        descText.setFont(font);
+        descText.setString(control.description);
+        descText.setCharacterSize(20);
+        descText.setFillColor(MENU_NORMAL_COLOR);
+        descText.setPosition(window.getSize().x * 0.35f, startY + 5);
+        window.draw(descText);
+
+        startY += spacing;
     }
+
+    // Indication de navigation
+    sf::Text navText;
+    navText.setFont(font);
+    
+    navText.setCharacterSize(20);
+    navText.setFillColor(ACCENT_COLOR);
+    navText.setPosition(window.getSize().x * 0.5f, window.getSize().y * 0.85f);
+    navText.setOrigin(navText.getLocalBounds().width / 2.0f, 0);
+    window.draw(navText);
 }
 
 void Game::drawTutorialPage3() {
@@ -647,7 +743,8 @@ void Game::toggleMusic() {
         isMusicPlaying = false;
         saveMessage = "Music Paused";
         std::cout << "Music paused" << std::endl;
-    } else {
+    }
+    else {
         // If music was never started or has stopped, start from beginning
         if (currentMusic.getStatus() == sf::Music::Status::Stopped) {
             if (!currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
@@ -719,50 +816,50 @@ void Game::reset() {
 
 void Game::processMenuSelection() {
     switch (menu.getSelectedItem()) {
-        case 0: // Start Game
-            reset();
-            grid = Grid(calculateOptimalGridSize().x, calculateOptimalGridSize().y);
-            // Only start music if it's not already playing
-            if (!isMusicPlaying && !musicPlaylist.empty()) {
-                currentTrackIndex = std::rand() % musicPlaylist.size();
-                if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
-                    currentMusic.setVolume(musicVolume);
-                    currentMusic.play();
-                    isMusicPlaying = true;
-                    musicDisplayClock.restart();
-                }
+    case 0: // Start Game
+        reset();
+        grid = Grid(calculateOptimalGridSize().x, calculateOptimalGridSize().y);
+        // Only start music if it's not already playing
+        if (!isMusicPlaying && !musicPlaylist.empty()) {
+            currentTrackIndex = std::rand() % musicPlaylist.size();
+            if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
+                currentMusic.setVolume(musicVolume);
+                currentMusic.play();
+                isMusicPlaying = true;
+                musicDisplayClock.restart();
             }
-            gameState = GameState::Playing;
-            break;
-            
-        case 1: // Load Game
-            loadGame();
-            // Only start music if it's not already playing
-            if (!isMusicPlaying && !musicPlaylist.empty()) {
-                currentTrackIndex = std::rand() % musicPlaylist.size();
-                if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
-                    currentMusic.setVolume(musicVolume);
-                    currentMusic.play();
-                    isMusicPlaying = true;
-                    musicDisplayClock.restart();
-                }
+        }
+        gameState = GameState::Playing;
+        break;
+
+    case 1: // Load Game
+        loadGame();
+        // Only start music if it's not already playing
+        if (!isMusicPlaying && !musicPlaylist.empty()) {
+            currentTrackIndex = std::rand() % musicPlaylist.size();
+            if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
+                currentMusic.setVolume(musicVolume);
+                currentMusic.play();
+                isMusicPlaying = true;
+                musicDisplayClock.restart();
             }
-            gameState = GameState::Playing;
-            break;
-            
-        case 2: // Tutorial
-            gameState = GameState::Tutorial;
-            currentTutorialPage = 1;
-            break;
-            
-        case 3: // Music Settings
-            gameState = GameState::MusicSettings;
-            selectedMusicTrack = currentTrackIndex;
-            break;
-            
-        case 4: // Exit
-            window.close();
-            break;
+        }
+        gameState = GameState::Playing;
+        break;
+
+    case 2: // Tutorial
+        gameState = GameState::Tutorial;
+        currentTutorialPage = 1;
+        break;
+
+    case 3: // Music Settings
+        gameState = GameState::MusicSettings;
+        selectedMusicTrack = currentTrackIndex;
+        break;
+
+    case 4: // Exit
+        window.close();
+        break;
     }
 }
 
@@ -770,24 +867,24 @@ void Game::handleZoom(float delta) {
     // Calculate new zoom level
     float zoomFactor = (delta > 0) ? 1.1f : 0.9f;
     float newZoom = zoomLevel * zoomFactor;
-    
+
     // Clamp zoom level between MIN_ZOOM and MAX_ZOOM
     if (newZoom >= MIN_ZOOM && newZoom <= MAX_ZOOM) {
         // Get current mouse position
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
         sf::Vector2f beforeCoord = window.mapPixelToCoords(mousePos);
-        
+
         zoomLevel = newZoom;
-        
+
         // Apply zoom to view
         sf::View view = window.getDefaultView();
         view.zoom(1.0f / zoomLevel);
         view.move(viewOffset);
         window.setView(view);
-        
+
         // Get new world coordinate of mouse
         sf::Vector2f afterCoord = window.mapPixelToCoords(mousePos);
-        
+
         // Adjust view offset to zoom towards mouse position
         viewOffset += beforeCoord - afterCoord;
     }
@@ -847,16 +944,16 @@ void Game::loadCustomPattern() {
             break;
         }
     }
-    
+
     if (!file.is_open()) {
         saveMessage = "Failed to open custom pattern file! Tried: " + possiblePaths[0];
         saveMessageClock.restart();
         return;
     }
-    
+
     // Debug output
     std::cout << "Successfully opened pattern file at: " << usedPath << std::endl;
-    
+
     int height, width;
     if (!(file >> height >> width)) {
         saveMessage = "Invalid custom pattern format!";
@@ -864,18 +961,18 @@ void Game::loadCustomPattern() {
         file.close();
         return;
     }
-    
+
     std::cout << "Pattern dimensions: " << width << "x" << height << std::endl;
-    
+
     if (height <= 0 || width <= 0 || height > 100 || width > 100) {
         saveMessage = "Invalid pattern dimensions!";
         saveMessageClock.restart();
         file.close();
         return;
     }
-    
+
     std::vector<std::vector<bool>> customPattern(height, std::vector<bool>(width));
-    
+
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             int cell;
@@ -894,12 +991,12 @@ void Game::loadCustomPattern() {
             customPattern[i][j] = cell == 1;
         }
     }
-    
+
     file.close();
     patterns["Custom"] = customPattern;
     selectedPattern = "Custom";
     manualMode = false;
-    
+
     saveMessage = "Custom pattern loaded successfully!";
     saveMessageClock.restart();
 }
@@ -923,7 +1020,8 @@ void Game::handleMouseEvents(const sf::Event& event) {
                     gridY >= 0 && gridY < grid.getHeight()) {
                     grid.setCell(gridX, gridY, !grid.getCellState(gridX, gridY));
                 }
-            } else if (patterns.find(selectedPattern) != patterns.end()) {
+            }
+            else if (patterns.find(selectedPattern) != patterns.end()) {
                 Pattern::insertPattern(grid, patterns[selectedPattern], gridX, gridY);
             }
         }
@@ -1043,9 +1141,10 @@ void Game::drawMusicSettings() {
         // Highlight current track
         if (i == currentTrackIndex) {
             trackBg.setFillColor(sf::Color(MENU_SELECTED_COLOR.r,
-                                         MENU_SELECTED_COLOR.g,
-                                         MENU_SELECTED_COLOR.b, 40));
-        } else {
+                MENU_SELECTED_COLOR.g,
+                MENU_SELECTED_COLOR.b, 40));
+        }
+        else {
             trackBg.setFillColor(sf::Color::Transparent);
         }
         window.draw(trackBg);
@@ -1096,36 +1195,36 @@ void Game::drawMusicSettings() {
 void Game::handleMusicSettingsEvents(const sf::Event& event) {
     if (event.type == sf::Event::KeyPressed) {
         switch (event.key.code) {
-            case sf::Keyboard::Escape:
-                gameState = GameState::Menu;
-                break;
-            case sf::Keyboard::Up:
-                if (selectedMusicTrack > 0) selectedMusicTrack--;
-                break;
-            case sf::Keyboard::Down:
-                if (selectedMusicTrack + 1 < musicTrackNames.size()) selectedMusicTrack++;
-                break;
-            case sf::Keyboard::Left:
-                updateMusicVolume(-5.0f);
-                break;
-            case sf::Keyboard::Right:
-                updateMusicVolume(5.0f);
-                break;
-            case sf::Keyboard::Space:
-                toggleMusic();
-                break;
-            case sf::Keyboard::Return:
-                if (selectedMusicTrack != currentTrackIndex) {
-                    currentTrackIndex = selectedMusicTrack;
-                    if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
-                        currentMusic.setVolume(musicVolume);
-                        currentMusic.play();
-                        isMusicPlaying = true;
-                    }
+        case sf::Keyboard::Escape:
+            gameState = GameState::Menu;
+            break;
+        case sf::Keyboard::Up:
+            if (selectedMusicTrack > 0) selectedMusicTrack--;
+            break;
+        case sf::Keyboard::Down:
+            if (selectedMusicTrack + 1 < musicTrackNames.size()) selectedMusicTrack++;
+            break;
+        case sf::Keyboard::Left:
+            updateMusicVolume(-5.0f);
+            break;
+        case sf::Keyboard::Right:
+            updateMusicVolume(5.0f);
+            break;
+        case sf::Keyboard::Space:
+            toggleMusic();
+            break;
+        case sf::Keyboard::Return:
+            if (selectedMusicTrack != currentTrackIndex) {
+                currentTrackIndex = selectedMusicTrack;
+                if (currentMusic.openFromFile(musicPlaylist[currentTrackIndex])) {
+                    currentMusic.setVolume(musicVolume);
+                    currentMusic.play();
+                    isMusicPlaying = true;
                 }
-                break;
-            default:
-                break;
+            }
+            break;
+        default:
+            break;
         }
     }
 }
