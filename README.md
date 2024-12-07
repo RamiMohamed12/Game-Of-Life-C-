@@ -92,6 +92,10 @@ Des abstractions haut niveau : grâce aux classes, templates, et autres fonction
 
 **Diagramme UML :**
 
+Mode Console : 
+
+![image](https://github.com/user-attachments/assets/5d67bede-7db5-4faf-a6ab-7c6c2aca9b81)
+
 Mode Graphique : 
 
 ![image](https://github.com/user-attachments/assets/10661a52-f29e-49a7-aac9-82f53fe86180)
