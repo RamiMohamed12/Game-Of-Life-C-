@@ -1,48 +1,58 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -Wall -std=c++17 -I. -Wno-switch
-SFML_LIBS = -lsfml-graphics -lsfml-window -lsfml-system
+CXXFLAGS = -Wall -Wextra -std=c++17 -I. -IService -IInterface -IComposants
+LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
 
 # Directories
 SRC_DIR = .
-OBJ_DIR = obj
-
-# Executable
-TARGET = GameOfLife
+BUILD_DIR = build
+BIN_DIR = bin
+INTERFACE_DIR = Interface
+COMPOSANTS_DIR = Composants
+SERVICE_DIR = Service
 
 # Source files
-SOURCES = $(SRC_DIR)/Main.cpp \
-          $(SRC_DIR)/Game.cpp \
-          $(SRC_DIR)/Grid.cpp \
-          $(SRC_DIR)/Pattern.cpp \
-          $(SRC_DIR)/AliveCell.cpp \
-          $(SRC_DIR)/DeadCell.cpp \
-          $(SRC_DIR)/Menu.cpp \
-          $(SRC_DIR)/GridSizeSelector.cpp
+SRCS = $(wildcard $(SRC_DIR)/*.cpp) \
+       $(wildcard $(INTERFACE_DIR)/*.cpp) \
+       $(wildcard $(COMPOSANTS_DIR)/*.cpp) \
+       $(wildcard $(SERVICE_DIR)/*.cpp)
 
 # Object files
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+OBJS = $(SRCS:%.cpp=$(BUILD_DIR)/%.o)
 
-# Create obj directory
-$(shell mkdir -p $(OBJ_DIR))
+# Binary name
+TARGET = $(BIN_DIR)/game
 
 # Default target
-all: $(TARGET)
+all: directories $(TARGET)
 
-# Link the executable
-$(TARGET): $(OBJECTS)
-	$(CXX) $(OBJECTS) -o $@ $(SFML_LIBS)
+# Create necessary directories
+directories:
+	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)/$(INTERFACE_DIR)
+	@mkdir -p $(BUILD_DIR)/$(COMPOSANTS_DIR)
+	@mkdir -p $(BUILD_DIR)/$(SERVICE_DIR)
+	@mkdir -p $(BIN_DIR)
 
-# Compile source files to object files
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+# Link
+$(TARGET): $(OBJS)
+	$(CXX) $(OBJS) -o $(TARGET) $(LDFLAGS)
+
+# Compile
+$(BUILD_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean up
+# Clean
 clean:
-	rm -rf $(OBJ_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR) $(BIN_DIR)
 
-# Rebuild
-rebuild: clean all
+# Run
+run: all
+	./$(TARGET)
 
-.PHONY: all clean rebuild
+# Phony targets
+.PHONY: all clean run directories
 
+# Dependencies
+-include $(OBJS:.o=.d)
