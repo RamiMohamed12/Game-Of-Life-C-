@@ -90,6 +90,11 @@ C++ combine :
 Un accès bas niveau : utile pour manipuler directement la mémoire ou optimiser les calculs.
 Des abstractions haut niveau : grâce aux classes, templates, et autres fonctionnalités orientées objet, ce qui permet de garder le code clair et modulaire.
 
+**Diagramme UML :**
+Mode Graphique : 
+
+![image](https://github.com/user-attachments/assets/402e1cd4-2279-4ce8-aa9c-99883cb4fe38)
+
 **Exécution du programme - Détail des étapes:**
 
 **Cloner le dépôt:**
