@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Game of Life
+Comment=Conway's Game of Life Implementation
+Exec=/home/ramimohamed/Github/Game-Of-Life-C-/GraphicProgram/bin/game
+Icon=/home/ramimohamed/Github/Game-Of-Life-C-/GraphicProgram/assets/icons/GameOfLife.png
+Terminal=false
+Categories=Game;Simulation;
