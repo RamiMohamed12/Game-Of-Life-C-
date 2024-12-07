@@ -94,6 +94,8 @@ Des abstractions haut niveau : grâce aux classes, templates, et autres fonction
 
 Mode Graphique : 
 ![image](https://github.com/user-attachments/assets/10661a52-f29e-49a7-aac9-82f53fe86180)
+![image](https://github.com/user-attachments/assets/1833dac3-8a6a-44a4-87e3-ea89b80434f7)
+![image](https://github.com/user-attachments/assets/00ba98fb-ef15-4149-9e15-6b40e373917a)
 
 **Exécution du programme - Détail des étapes:**
 
