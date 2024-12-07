@@ -152,7 +152,7 @@ private:
 
     void drawMusicSettings();
     void handleMusicSettingsEvents(const sf::Event& event);
-    
+
     // Additional member variables
     size_t selectedMusicTrack;
     std::vector<std::string> musicTrackNames;  // Friendly names for display
