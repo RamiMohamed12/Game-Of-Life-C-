@@ -164,6 +164,10 @@ Déplacez-vous dans le répertoire contenant le programme graphique en exécutan
 
     cd GraphicProgram
 
+Compile the program : 
+
+    make
+
 Après avoir accédé au répertoire GraphicProgram, vous devez vous déplacer dans le sous-répertoire bin, où se trouve l'exécutable du programme graphique. 
 
     cd bin
